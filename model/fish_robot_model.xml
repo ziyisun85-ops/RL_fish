@@ -1,0 +1,289 @@
+﻿<mujoco model="eel_2d_robot">
+  <compiler angle="degree" autolimits="true" inertiafromgeom="true" meshdir="generated_stl" />
+  <option timestep="0.002" gravity="0 0 0" integrator="implicitfast" cone="elliptic" iterations="100" />
+  <default>
+    <site type="sphere" size="0.004" rgba="0.90 0.20 0.20 1" group="3" />
+    <default class="root_joint">
+      <joint limited="false" stiffness="0" armature="0.01" damping="0.4" />
+    </default>
+    <default class="active_hinge">
+      <joint type="hinge" axis="0 0 1" limited="true" range="-15 15" stiffness="1.041" damping="0.05" armature="0.0005" />
+    </default>
+    <default class="tail_hinge">
+      <joint type="hinge" axis="0 0 1" limited="true" range="-25 25" stiffness="0.18" damping="0.02" armature="0.0002" />
+    </default>
+    <default class="tendon_motor">
+      <motor ctrllimited="true" ctrlrange="0 100" gear="1" />
+    </default>
+    <default class="servo_joint">
+      <joint type="hinge" axis="0 0 1" limited="true" range="-63.025357 63.025357" damping="0.2" armature="0.001" />
+    </default>
+  </default>
+  <asset>
+    <mesh name="centre_compartment_mesh" file="centre_compartment_mesh.stl" />
+    <mesh name="vertebra_mesh" file="vertebra_mesh.stl" />
+    <mesh name="head_mesh" file="head_mesh.stl" />
+    <mesh name="tail_joint_mesh" file="tail_joint_mesh.stl" />
+    <mesh name="tail_seg1_mesh" file="tail_seg1_mesh.stl" />
+    <mesh name="tail_seg2_mesh" file="tail_seg2_mesh.stl" />
+    <mesh name="tail_seg3_mesh" file="tail_seg3_mesh.stl" />
+    <mesh name="tail_seg4_mesh" file="tail_seg4_mesh.stl" />
+  </asset>
+  <worldbody>
+    <body name="front_servo_body" pos="0 0 0">
+      <joint name="front_servo" class="servo_joint" />
+      <geom name="front_servo_geom" type="sphere" size="0.001" mass="1e-6" rgba="0 0 0 0" contype="0" conaffinity="0" />
+    </body>
+    <body name="back_servo_body" pos="0 0 0">
+      <joint name="back_servo" class="servo_joint" />
+      <geom name="back_servo_geom" type="sphere" size="0.001" mass="1e-6" rgba="0 0 0 0" contype="0" conaffinity="0" />
+    </body>
+    <body name="centre_compartment" pos="0 0 0">
+      <joint name="root_x" class="root_joint" type="slide" axis="1 0 0" />
+      <joint name="root_y" class="root_joint" type="slide" axis="0 1 0" />
+      <joint name="root_yaw" class="root_joint" type="hinge" axis="0 0 1" />
+      <geom name="centre_compartment_dyn" type="box" size="0.175 0.06 0.06" mass="2.5" rgba="0 0 0 0" contype="1" conaffinity="2" group="4" />
+      <geom name="centre_compartment_vis" type="mesh" mesh="centre_compartment_mesh" mass="0" rgba="0.18 0.22 0.33 1" contype="0" conaffinity="0" group="1" />
+      <site name="centre_reference" pos="0 0 0" rgba="0 0 0 0" />
+      <site name="centre_front_left" pos="0.175 0.0375 0" />
+      <site name="centre_front_right" pos="0.175 -0.0375 0" />
+      <site name="centre_back_left" pos="-0.175 0.0375 0" />
+      <site name="centre_back_right" pos="-0.175 -0.0375 0" />
+      <body name="front_v1" pos="0.195 0 0">
+        <joint name="front_v1_yaw" class="active_hinge" pos="-0.02 0 0" />
+        <geom name="front_v1_dyn" type="box" size="0.004 0.044985 0.045" mass="0.05" rgba="0 0 0 0" contype="1" conaffinity="2" group="4" />
+        <geom name="front_v1_vis" type="mesh" mesh="vertebra_mesh" mass="0" rgba="0.20 0.54 0.81 1" contype="0" conaffinity="0" group="1" />
+        <site name="front_v1_left" pos="0 0.0375 0" />
+        <site name="front_v1_right" pos="0 -0.0375 0" />
+        <body name="front_v2" pos="0.04 0 0">
+          <joint name="front_v2_yaw" class="active_hinge" pos="-0.02 0 0" />
+          <geom name="front_v2_dyn" type="box" size="0.004 0.044985 0.045" mass="0.05" rgba="0 0 0 0" contype="1" conaffinity="2" group="4" />
+          <geom name="front_v2_vis" type="mesh" mesh="vertebra_mesh" mass="0" rgba="0.20 0.54 0.81 1" contype="0" conaffinity="0" group="1" />
+          <site name="front_v2_left" pos="0 0.0375 0" />
+          <site name="front_v2_right" pos="0 -0.0375 0" />
+          <body name="front_v3" pos="0.04 0 0">
+            <geom name="front_v3_dyn" type="box" size="0.004 0.044985 0.045" mass="0.05" rgba="0 0 0 0" contype="1" conaffinity="2" group="4" />
+            <geom name="front_v3_vis" type="mesh" mesh="vertebra_mesh" mass="0" rgba="0.20 0.54 0.81 1" contype="0" conaffinity="0" group="1" />
+            <site name="front_v3_left" pos="0 0.0375 0" />
+            <site name="front_v3_right" pos="0 -0.0375 0" />
+            <body name="front_v4" pos="0.04 0 0">
+              <joint name="front_v4_yaw" class="active_hinge" pos="-0.02 0 0" />
+              <geom name="front_v4_dyn" type="box" size="0.004 0.044985 0.045" mass="0.05" rgba="0 0 0 0" contype="1" conaffinity="2" group="4" />
+              <geom name="front_v4_vis" type="mesh" mesh="vertebra_mesh" mass="0" rgba="0.20 0.54 0.81 1" contype="0" conaffinity="0" group="1" />
+              <site name="front_v4_left" pos="0 0.0375 0" />
+              <site name="front_v4_right" pos="0 -0.0375 0" />
+              <body name="front_v5" pos="0.04 0 0">
+                <geom name="front_v5_dyn" type="box" size="0.004 0.044985 0.045" mass="0.05" rgba="0 0 0 0" contype="1" conaffinity="2" group="4" />
+                <geom name="front_v5_vis" type="mesh" mesh="vertebra_mesh" mass="0" rgba="0.20 0.54 0.81 1" contype="0" conaffinity="0" group="1" />
+                <site name="front_v5_left" pos="0 0.0375 0" />
+                <site name="front_v5_right" pos="0 -0.0375 0" />
+                <body name="front_v6" pos="0.04 0 0">
+                  <joint name="front_v6_yaw" class="active_hinge" pos="-0.02 0 0" />
+                  <geom name="front_v6_dyn" type="box" size="0.004 0.044985 0.045" mass="0.05" rgba="0 0 0 0" contype="1" conaffinity="2" group="4" />
+                  <geom name="front_v6_vis" type="mesh" mesh="vertebra_mesh" mass="0" rgba="0.20 0.54 0.81 1" contype="0" conaffinity="0" group="1" />
+                  <site name="front_v6_left" pos="0 0.0375 0" />
+                  <site name="front_v6_right" pos="0 -0.0375 0" />
+                  <body name="front_v7" pos="0.04 0 0">
+                    <geom name="front_v7_dyn" type="box" size="0.004 0.044985 0.045" mass="0.05" rgba="0 0 0 0" contype="1" conaffinity="2" group="4" />
+                    <geom name="front_v7_vis" type="mesh" mesh="vertebra_mesh" mass="0" rgba="0.20 0.54 0.81 1" contype="0" conaffinity="0" group="1" />
+                    <site name="front_v7_left" pos="0 0.0375 0" />
+                    <site name="front_v7_right" pos="0 -0.0375 0" />
+                    <body name="front_v8" pos="0.04 0 0">
+                      <geom name="front_v8_dyn" type="box" size="0.004 0.044985 0.045" mass="0.05" rgba="0 0 0 0" contype="1" conaffinity="2" group="4" />
+                      <geom name="front_v8_vis" type="mesh" mesh="vertebra_mesh" mass="0" rgba="0.20 0.54 0.81 1" contype="0" conaffinity="0" group="1" />
+                      <site name="front_v8_left" pos="0 0.0375 0" />
+                      <site name="front_v8_right" pos="0 -0.0375 0" />
+                      <body name="front_v9" pos="0.04 0 0">
+                        <joint name="front_v9_yaw" class="active_hinge" pos="-0.02 0 0" />
+                        <geom name="front_v9_dyn" type="box" size="0.004 0.044985 0.045" mass="0.05" rgba="0 0 0 0" contype="1" conaffinity="2" group="4" />
+                        <geom name="front_v9_vis" type="mesh" mesh="vertebra_mesh" mass="0" rgba="0.20 0.54 0.81 1" contype="0" conaffinity="0" group="1" />
+                        <site name="front_v9_left" pos="0 0.0375 0" />
+                        <site name="front_v9_right" pos="0 -0.0375 0" />
+                        <body name="head" pos="0.1315 0 0">
+                          <geom name="head_dyn" type="box" size="0.0775 0.044989 0.044989" mass="0.874703" rgba="0 0 0 0" contype="1" conaffinity="2" group="4" />
+                          <geom name="head_vis" type="mesh" mesh="head_mesh" mass="0" rgba="0.10 0.37 0.64 1" contype="0" conaffinity="0" group="1" />
+                          <camera name="head_camera" pos="0.08 0 0.08" xyaxes="0 -1 0 0.34 0 0.94" fovy="120" />
+                          <site name="head_left" pos="-0.0725 0.0375 0" />
+                          <site name="head_right" pos="-0.0725 -0.0375 0" />
+                        </body>
+                      </body>
+                    </body>
+                  </body>
+                </body>
+              </body>
+            </body>
+          </body>
+        </body>
+      </body>
+      <body name="back_v1" pos="-0.195 0 0">
+        <joint name="back_v1_yaw" class="active_hinge" pos="0.02 0 0" />
+        <geom name="back_v1_dyn" type="box" size="0.004 0.044985 0.045" mass="0.05" rgba="0 0 0 0" contype="1" conaffinity="2" group="4" />
+        <geom name="back_v1_vis" type="mesh" mesh="vertebra_mesh" mass="0" rgba="0.20 0.54 0.81 1" contype="0" conaffinity="0" group="1" />
+        <site name="back_v1_left" pos="0 0.0375 0" />
+        <site name="back_v1_right" pos="0 -0.0375 0" />
+        <body name="back_v2" pos="-0.04 0 0">
+          <joint name="back_v2_yaw" class="active_hinge" pos="0.02 0 0" />
+          <geom name="back_v2_dyn" type="box" size="0.004 0.044985 0.045" mass="0.05" rgba="0 0 0 0" contype="1" conaffinity="2" group="4" />
+          <geom name="back_v2_vis" type="mesh" mesh="vertebra_mesh" mass="0" rgba="0.20 0.54 0.81 1" contype="0" conaffinity="0" group="1" />
+          <site name="back_v2_left" pos="0 0.0375 0" />
+          <site name="back_v2_right" pos="0 -0.0375 0" />
+          <body name="back_v3" pos="-0.04 0 0">
+            <geom name="back_v3_dyn" type="box" size="0.004 0.044985 0.045" mass="0.05" rgba="0 0 0 0" contype="1" conaffinity="2" group="4" />
+            <geom name="back_v3_vis" type="mesh" mesh="vertebra_mesh" mass="0" rgba="0.20 0.54 0.81 1" contype="0" conaffinity="0" group="1" />
+            <site name="back_v3_left" pos="0 0.0375 0" />
+            <site name="back_v3_right" pos="0 -0.0375 0" />
+            <body name="back_v4" pos="-0.04 0 0">
+              <joint name="back_v4_yaw" class="active_hinge" pos="0.02 0 0" />
+              <geom name="back_v4_dyn" type="box" size="0.004 0.044985 0.045" mass="0.05" rgba="0 0 0 0" contype="1" conaffinity="2" group="4" />
+              <geom name="back_v4_vis" type="mesh" mesh="vertebra_mesh" mass="0" rgba="0.20 0.54 0.81 1" contype="0" conaffinity="0" group="1" />
+              <site name="back_v4_left" pos="0 0.0375 0" />
+              <site name="back_v4_right" pos="0 -0.0375 0" />
+              <body name="back_v5" pos="-0.04 0 0">
+                <geom name="back_v5_dyn" type="box" size="0.004 0.044985 0.045" mass="0.05" rgba="0 0 0 0" contype="1" conaffinity="2" group="4" />
+                <geom name="back_v5_vis" type="mesh" mesh="vertebra_mesh" mass="0" rgba="0.20 0.54 0.81 1" contype="0" conaffinity="0" group="1" />
+                <site name="back_v5_left" pos="0 0.0375 0" />
+                <site name="back_v5_right" pos="0 -0.0375 0" />
+                <body name="back_v6" pos="-0.04 0 0">
+                  <joint name="back_v6_yaw" class="active_hinge" pos="0.02 0 0" />
+                  <geom name="back_v6_dyn" type="box" size="0.004 0.044985 0.045" mass="0.05" rgba="0 0 0 0" contype="1" conaffinity="2" group="4" />
+                  <geom name="back_v6_vis" type="mesh" mesh="vertebra_mesh" mass="0" rgba="0.20 0.54 0.81 1" contype="0" conaffinity="0" group="1" />
+                  <site name="back_v6_left" pos="0 0.0375 0" />
+                  <site name="back_v6_right" pos="0 -0.0375 0" />
+                  <body name="back_v7" pos="-0.04 0 0">
+                    <geom name="back_v7_dyn" type="box" size="0.004 0.044985 0.045" mass="0.05" rgba="0 0 0 0" contype="1" conaffinity="2" group="4" />
+                    <geom name="back_v7_vis" type="mesh" mesh="vertebra_mesh" mass="0" rgba="0.20 0.54 0.81 1" contype="0" conaffinity="0" group="1" />
+                    <site name="back_v7_left" pos="0 0.0375 0" />
+                    <site name="back_v7_right" pos="0 -0.0375 0" />
+                    <body name="back_v8" pos="-0.04 0 0">
+                      <geom name="back_v8_dyn" type="box" size="0.004 0.044985 0.045" mass="0.05" rgba="0 0 0 0" contype="1" conaffinity="2" group="4" />
+                      <geom name="back_v8_vis" type="mesh" mesh="vertebra_mesh" mass="0" rgba="0.20 0.54 0.81 1" contype="0" conaffinity="0" group="1" />
+                      <site name="back_v8_left" pos="0 0.0375 0" />
+                      <site name="back_v8_right" pos="0 -0.0375 0" />
+                      <body name="back_v9" pos="-0.04 0 0">
+                        <joint name="back_v9_yaw" class="active_hinge" pos="0.02 0 0" />
+                        <geom name="back_v9_dyn" type="box" size="0.004 0.044985 0.045" mass="0.05" rgba="0 0 0 0" contype="1" conaffinity="2" group="4" />
+                        <geom name="back_v9_vis" type="mesh" mesh="vertebra_mesh" mass="0" rgba="0.20 0.54 0.81 1" contype="0" conaffinity="0" group="1" />
+                        <site name="back_v9_left" pos="0 0.0375 0" />
+                        <site name="back_v9_right" pos="0 -0.0375 0" />
+                        <body name="joint_tail" pos="-0.109 0 0">
+                          <geom name="joint_tail_dyn" type="box" size="0.055 0.04498 0.045" mass="0.687113" rgba="0 0 0 0" contype="1" conaffinity="2" group="4" />
+                          <geom name="joint_tail_vis" type="mesh" mesh="tail_joint_mesh" mass="0" rgba="0.17 0.56 0.56 1" contype="0" conaffinity="0" group="1" />
+                          <site name="joint_tail_left" pos="0.05 0.0375 0" />
+                          <site name="joint_tail_right" pos="0.05 -0.0375 0" />
+                          <body name="tail_seg1" pos="-0.04 0 0">
+                            <joint name="tail_seg1_yaw" class="tail_hinge" pos="0.02 0 0" />
+                            <geom name="tail_seg1_dyn" type="box" size="0.025785 0.0075 0.043364" mass="0.149228" rgba="0 0 0 0" contype="1" conaffinity="2" group="4" />
+                            <geom name="tail_seg1_vis" type="mesh" mesh="tail_seg1_mesh" mass="0" rgba="0.88 0.75 0.44 1" contype="0" conaffinity="0" group="1" />
+                            <body name="tail_seg2" pos="-0.04 0 0">
+                              <joint name="tail_seg2_yaw" class="tail_hinge" pos="0.02 0 0" />
+                              <geom name="tail_seg2_dyn" type="box" size="0.029215 0.006935 0.043302" mass="0.167388" rgba="0 0 0 0" contype="1" conaffinity="2" group="4" />
+                              <geom name="tail_seg2_vis" type="mesh" mesh="tail_seg2_mesh" mass="0" rgba="0.88 0.75 0.44 1" contype="0" conaffinity="0" group="1" />
+                              <body name="tail_seg3" pos="-0.04 0 0">
+                                <joint name="tail_seg3_yaw" class="tail_hinge" pos="0.02 0 0" />
+                                <geom name="tail_seg3_dyn" type="box" size="0.03 0.005405 0.038704" mass="0.114061" rgba="0 0 0 0" contype="1" conaffinity="2" group="4" />
+                                <geom name="tail_seg3_vis" type="mesh" mesh="tail_seg3_mesh" mass="0" rgba="0.88 0.75 0.44 1" contype="0" conaffinity="0" group="1" />
+                                <body name="tail_seg4" pos="-0.04 0 0">
+                                  <joint name="tail_seg4_yaw" class="tail_hinge" pos="0.02 0 0" />
+                                  <geom name="tail_seg4_dyn" type="box" size="0.03 0.003834 0.033982" mass="0.069322" rgba="0 0 0 0" contype="1" conaffinity="2" group="4" />
+                                  <geom name="tail_seg4_vis" type="mesh" mesh="tail_seg4_mesh" mass="0" rgba="0.88 0.75 0.44 1" contype="0" conaffinity="0" group="1" />
+                                </body>
+                              </body>
+                            </body>
+                          </body>
+                        </body>
+                      </body>
+                    </body>
+                  </body>
+                </body>
+              </body>
+            </body>
+          </body>
+        </body>
+      </body>
+    </body>
+  </worldbody>
+  <tendon>
+    <spatial name="front_wire_left" width="0.0025" rgba="0.95 0.25 0.25 1">
+      <site site="centre_front_left" />
+      <site site="front_v1_left" />
+      <site site="front_v2_left" />
+      <site site="front_v3_left" />
+      <site site="front_v4_left" />
+      <site site="front_v5_left" />
+      <site site="front_v6_left" />
+      <site site="front_v7_left" />
+      <site site="front_v8_left" />
+      <site site="front_v9_left" />
+      <site site="head_left" />
+    </spatial>
+    <spatial name="front_wire_right" width="0.0025" rgba="0.85 0.18 0.18 1">
+      <site site="centre_front_right" />
+      <site site="front_v1_right" />
+      <site site="front_v2_right" />
+      <site site="front_v3_right" />
+      <site site="front_v4_right" />
+      <site site="front_v5_right" />
+      <site site="front_v6_right" />
+      <site site="front_v7_right" />
+      <site site="front_v8_right" />
+      <site site="front_v9_right" />
+      <site site="head_right" />
+    </spatial>
+    <spatial name="back_wire_left" width="0.0025" rgba="0.25 0.80 0.80 1">
+      <site site="centre_back_left" />
+      <site site="back_v1_left" />
+      <site site="back_v2_left" />
+      <site site="back_v3_left" />
+      <site site="back_v4_left" />
+      <site site="back_v5_left" />
+      <site site="back_v6_left" />
+      <site site="back_v7_left" />
+      <site site="back_v8_left" />
+      <site site="back_v9_left" />
+      <site site="joint_tail_left" />
+    </spatial>
+    <spatial name="back_wire_right" width="0.0025" rgba="0.18 0.68 0.68 1">
+      <site site="centre_back_right" />
+      <site site="back_v1_right" />
+      <site site="back_v2_right" />
+      <site site="back_v3_right" />
+      <site site="back_v4_right" />
+      <site site="back_v5_right" />
+      <site site="back_v6_right" />
+      <site site="back_v7_right" />
+      <site site="back_v8_right" />
+      <site site="back_v9_right" />
+      <site site="joint_tail_right" />
+    </spatial>
+    <fixed name="front_servo_tendon">
+      <joint joint="front_servo" coef="0.0375" />
+    </fixed>
+    <fixed name="back_servo_tendon">
+      <joint joint="back_servo" coef="0.0375" />
+    </fixed>
+  </tendon>
+  <equality>
+    <tendon name="front_left_couple" tendon1="front_wire_left" tendon2="front_servo_tendon" polycoef="0 -1 0 0 0" solref="0.002 1" solimp="0.99 0.999 0.001" />
+    <tendon name="front_right_couple" tendon1="front_wire_right" tendon2="front_servo_tendon" polycoef="0 1 0 0 0" solref="0.002 1" solimp="0.99 0.999 0.001" />
+    <tendon name="back_left_couple" tendon1="back_wire_left" tendon2="back_servo_tendon" polycoef="0 -1 0 0 0" solref="0.002 1" solimp="0.99 0.999 0.001" />
+    <tendon name="back_right_couple" tendon1="back_wire_right" tendon2="back_servo_tendon" polycoef="0 1 0 0 0" solref="0.002 1" solimp="0.99 0.999 0.001" />
+  </equality>
+  <actuator>
+    <position name="front_servo_act" joint="front_servo" ctrlrange="-1.1 1.1" kp="120" />
+    <position name="back_servo_act" joint="back_servo" ctrlrange="-1.1 1.1" kp="120" />
+  </actuator>
+  <sensor>
+    <jointpos name="front_servo_pos_sensor" joint="front_servo" />
+    <jointpos name="back_servo_pos_sensor" joint="back_servo" />
+    <jointpos name="root_x_pos_sensor" joint="root_x" />
+    <jointpos name="root_y_pos_sensor" joint="root_y" />
+    <jointpos name="root_yaw_pos_sensor" joint="root_yaw" />
+    <jointvel name="root_x_vel_sensor" joint="root_x" />
+    <jointvel name="root_y_vel_sensor" joint="root_y" />
+    <jointvel name="root_yaw_vel_sensor" joint="root_yaw" />
+    <framepos name="head_pos" objtype="xbody" objname="head" />
+    <framepos name="joint_tail_pos" objtype="xbody" objname="joint_tail" />
+    <framexaxis name="centre_xaxis" objtype="xbody" objname="centre_compartment" />
+  </sensor>
+</mujoco>
+

@@ -1,0 +1,4 @@
+<mujoco model="eel_pool_scene">
+  <include file="fish_robot_model.xml" />
+  <include file="pool_environment.xml" />
+</mujoco>

@@ -1,0 +1,7 @@
+gymnasium>=1.0
+stable-baselines3>=2.4
+mujoco==3.3.7
+numpy>=1.26
+matplotlib>=3.8
+imageio>=2.37
+imageio-ffmpeg>=0.6

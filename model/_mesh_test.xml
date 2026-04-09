@@ -1,0 +1,1 @@
+<mujoco model="t"><compiler meshdir="generated_stl"/><asset><mesh name="m" file="vertebra_mesh.stl"/></asset><worldbody><body><geom type="mesh" mesh="m" mass="1"/></body></worldbody></mujoco>

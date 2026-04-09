@@ -1,0 +1,21 @@
+name: simmujoco-server
+channels:
+  - conda-forge
+
+dependencies:
+  - python=3.9
+  - pip
+  - numpy=2.0.*
+  - matplotlib=3.9.*
+  - pillow=11.3.*
+  - pip:
+      - --extra-index-url https://download.pytorch.org/whl/cu124
+      - torch==2.6.0+cu124
+      - gymnasium==1.1.1
+      - stable-baselines3==2.7.1
+      - mujoco==3.3.7
+      - imageio==2.37.2
+      - imageio-ffmpeg==0.6.0
+
+variables:
+  MUJOCO_GL: egl
