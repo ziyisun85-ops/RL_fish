@@ -6,10 +6,10 @@
   </asset>
   <worldbody>
     <light name="light" directional="true" diffuse="0.8 0.8 0.8" pos="0 0 2.5" />
-    <camera name="top" pos="0 0 5.2" xyaxes="1 0 0 0 1 0" />
-    <camera name="oblique" pos="-4.4 -3.4 2.2" xyaxes="0.65 -0.76 0 0.25 0.22 0.94" />
-    <geom name="water_volume" type="box" pos="0 0 0" size="2.5 1.5 0.75" material="water" contype="0" conaffinity="0" mass="0" group="2" />
-    <geom name="goal_region_marker" type="box" pos="1.95 0 -0.748" size="0.12 0.25 0.002" rgba="0.16 0.67 0.55 0.35" contype="0" conaffinity="0" mass="0" group="1" />
+    <camera name="top" pos="0 0 6.6" xyaxes="1 0 0 0 1 0" />
+    <camera name="oblique" pos="-5.4 -3.8 2.8" xyaxes="0.62 -0.78 0 0.29 0.23 0.93" />
+    <geom name="water_volume" type="box" pos="0 0 0" size="3.2 1.7 0.75" material="water" contype="0" conaffinity="0" mass="0" group="2" />
+    <geom name="goal_region_marker" type="box" pos="2.55 0 -0.748" size="0.12 0.25 0.002" rgba="0.16 0.67 0.55 0.35" contype="0" conaffinity="0" mass="0" group="1" />
     <body name="visual_obstacle_body_0" mocap="true" pos="0 0 -5">
       <geom name="visual_obstacle_0" type="cylinder" pos="0 0 0" size="0.12 0.74" rgba="0.91 0.42 0.32 0" contype="2" conaffinity="1" mass="1e-6" group="1" />
     </body>
@@ -34,10 +34,10 @@
     <body name="visual_obstacle_body_7" mocap="true" pos="0 0 -5">
       <geom name="visual_obstacle_7" type="cylinder" pos="0 0 0" size="0.12 0.74" rgba="0.91 0.42 0.32 0" contype="2" conaffinity="1" mass="1e-6" group="1" />
     </body>
-    <geom name="pool_floor" type="box" pos="0 0 -0.775" size="2.525 1.525 0.025" material="pool_wall" friction="0.8 0.1 0.1" contype="2" conaffinity="1" />
-    <geom name="pool_wall_front" type="box" pos="2.525 0 0" size="0.025 1.5 0.75" material="pool_wall" friction="0.8 0.1 0.1" contype="2" conaffinity="1" />
-    <geom name="pool_wall_back" type="box" pos="-2.525 0 0" size="0.025 1.5 0.75" material="pool_wall" friction="0.8 0.1 0.1" contype="2" conaffinity="1" />
-    <geom name="pool_wall_left" type="box" pos="0 1.525 0" size="2.5 0.025 0.75" material="pool_wall" friction="0.8 0.1 0.1" contype="2" conaffinity="1" />
-    <geom name="pool_wall_right" type="box" pos="0 -1.525 0" size="2.5 0.025 0.75" material="pool_wall" friction="0.8 0.1 0.1" contype="2" conaffinity="1" />
+    <geom name="pool_floor" type="box" pos="0 0 -0.775" size="3.225 1.725 0.025" material="pool_wall" friction="0.8 0.1 0.1" contype="2" conaffinity="1" />
+    <geom name="pool_wall_front" type="box" pos="3.225 0 0" size="0.025 1.7 0.75" material="pool_wall" friction="0.8 0.1 0.1" contype="2" conaffinity="1" />
+    <geom name="pool_wall_back" type="box" pos="-3.225 0 0" size="0.025 1.7 0.75" material="pool_wall" friction="0.8 0.1 0.1" contype="2" conaffinity="1" />
+    <geom name="pool_wall_left" type="box" pos="0 1.725 0" size="3.2 0.025 0.75" material="pool_wall" friction="0.8 0.1 0.1" contype="2" conaffinity="1" />
+    <geom name="pool_wall_right" type="box" pos="0 -1.725 0" size="3.2 0.025 0.75" material="pool_wall" friction="0.8 0.1 0.1" contype="2" conaffinity="1" />
   </worldbody>
 </mujoco>

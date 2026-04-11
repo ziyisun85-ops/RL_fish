@@ -35,12 +35,12 @@
     <light name="light" directional="true" diffuse="0.8 0.8 0.8" pos="0 0 2.5"/>
     <camera name="top" pos="0 0 5.2" xyaxes="1 0 0 0 1 0"/>
     <camera name="oblique" pos="-4.4 -3.4 2.2" xyaxes="0.65 -0.76 0 0.25 0.22 0.94"/>
-    <geom name="water_volume" type="box" pos="0 0 0" size="2.5 1.5 0.75" material="water" contype="0" conaffinity="0" mass="0" group="2"/>
-    <geom name="pool_floor" type="box" pos="0 0 -0.775" size="2.525 1.525 0.025" material="pool_wall" friction="0.8 0.1 0.1" contype="2" conaffinity="1"/>
-    <geom name="pool_wall_front" type="box" pos="2.525 0 0" size="0.025 1.5 0.75" material="pool_wall" friction="0.8 0.1 0.1" contype="2" conaffinity="1"/>
-    <geom name="pool_wall_back" type="box" pos="-2.525 0 0" size="0.025 1.5 0.75" material="pool_wall" friction="0.8 0.1 0.1" contype="2" conaffinity="1"/>
-    <geom name="pool_wall_left" type="box" pos="0 1.525 0" size="2.5 0.025 0.75" material="pool_wall" friction="0.8 0.1 0.1" contype="2" conaffinity="1"/>
-    <geom name="pool_wall_right" type="box" pos="0 -1.525 0" size="2.5 0.025 0.75" material="pool_wall" friction="0.8 0.1 0.1" contype="2" conaffinity="1"/>
+    <geom name="water_volume" type="box" pos="0 0 0" size="3.2 1.7 0.75" material="water" contype="0" conaffinity="0" mass="0" group="2"/>
+    <geom name="pool_floor" type="box" pos="0 0 -0.775" size="3.225 1.725 0.025" material="pool_wall" friction="0.8 0.1 0.1" contype="2" conaffinity="1"/>
+    <geom name="pool_wall_front" type="box" pos="3.225 0 0" size="0.025 1.7 0.75" material="pool_wall" friction="0.8 0.1 0.1" contype="2" conaffinity="1"/>
+    <geom name="pool_wall_back" type="box" pos="-3.225 0 0" size="0.025 1.7 0.75" material="pool_wall" friction="0.8 0.1 0.1" contype="2" conaffinity="1"/>
+    <geom name="pool_wall_left" type="box" pos="0 1.725 0" size="3.2 0.025 0.75" material="pool_wall" friction="0.8 0.1 0.1" contype="2" conaffinity="1"/>
+    <geom name="pool_wall_right" type="box" pos="0 -1.725 0" size="3.2 0.025 0.75" material="pool_wall" friction="0.8 0.1 0.1" contype="2" conaffinity="1"/>
     <body name="front_servo_body" pos="0 0 0">
       <joint name="front_servo" class="servo_joint"/>
       <geom name="front_servo_geom" type="sphere" size="0.001" mass="1e-6" rgba="0 0 0 0" contype="0" conaffinity="0"/>

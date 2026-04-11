@@ -63,6 +63,18 @@ def parse_args() -> argparse.Namespace:
         help="Moving-average window size used by the live reward plot.",
     )
     parser.add_argument(
+        "--record-videos",
+        action=argparse.BooleanOptionalAction,
+        default=None,
+        help="Enable or disable episode video recording.",
+    )
+    parser.add_argument(
+        "--video-interval-episodes",
+        type=int,
+        default=None,
+        help="Override the episode interval for saved videos when recording is enabled.",
+    )
+    parser.add_argument(
         "--scenario-path",
         type=str,
         default=None,
@@ -534,6 +546,10 @@ def main() -> None:
         config.train.total_timesteps = args.timesteps
     if args.num_envs is not None:
         config.train.num_envs = args.num_envs
+    if args.record_videos is not None:
+        config.train.save_episode_videos = bool(args.record_videos)
+    if args.video_interval_episodes is not None:
+        config.train.video_interval_episodes = args.video_interval_episodes
     if args.xml_path is not None:
         config.env.model.xml_path = str(Path(args.xml_path).resolve())
     if args.render and not 0 <= args.render_env_index < config.train.num_envs:
@@ -575,6 +591,16 @@ def main() -> None:
         print(f"Training on fixed scenario: {scenario_path}")
     if resume_path is not None:
         print(f"Resuming from model: {resume_path}")
+    if config.train.save_episode_videos and config.train.video_interval_episodes > 1 and config.train.num_envs > 1:
+        print(
+            "Video capture is enabled with multiple environments. "
+            "Episodes finish asynchronously, so frames still need to be buffered for every env. "
+            "Use --num-envs 1 if you want video capture only on every saved episode and lower RAM usage."
+        )
+
+    record_every_n_episodes = 1
+    if config.train.save_episode_videos and config.train.video_interval_episodes > 0 and config.train.num_envs == 1:
+        record_every_n_episodes = config.train.video_interval_episodes
 
     def make_env(rank: int):
         def _factory() -> FishPathAvoidEnv:
@@ -588,6 +614,7 @@ def main() -> None:
                 recording_width=config.train.video_width,
                 recording_height=config.train.video_height,
                 recording_frame_stride=config.train.video_frame_stride,
+                record_every_n_episodes=record_every_n_episodes,
                 scenario_path=scenario_path,
             )
             env.reset(seed=config.train.seed + rank)

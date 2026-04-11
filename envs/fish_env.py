@@ -13,6 +13,7 @@ import numpy as np
 from gymnasium import spaces
 
 from configs.default_config import FishEnvConfig, make_config
+from hydrodynamics import apply_hydrodynamics
 from utils.geometry import body_to_world_vector, heading_vector, world_to_body_vector, wrap_to_pi
 from utils.mappings import head_angle_to_tail_frequency, servo_angle_to_head_angle
 from utils.obstacles import (
@@ -56,6 +57,7 @@ class FishPathAvoidEnv(gym.Env):
         recording_width: int = 480,
         recording_height: int = 270,
         recording_frame_stride: int = 4,
+        record_every_n_episodes: int = 1,
         scenario_path: str | Path | None = None,
     ) -> None:
         super().__init__()
@@ -72,6 +74,7 @@ class FishPathAvoidEnv(gym.Env):
         self.recording_width = max(64, int(recording_width))
         self.recording_height = max(64, int(recording_height))
         self.recording_frame_stride = max(1, int(recording_frame_stride))
+        self.record_every_n_episodes = max(1, int(record_every_n_episodes))
         self.scenario_path = None if scenario_path is None else Path(scenario_path).resolve()
         self.fixed_scenario = None if self.scenario_path is None else load_fixed_scenario(self.scenario_path)
         self.active_scenario_id = None if self.fixed_scenario is None else self.fixed_scenario.scenario_id
@@ -114,6 +117,7 @@ class FishPathAvoidEnv(gym.Env):
         self.visual_obstacle_mocap_ids = self._visual_obstacle_mocap_ids()
         self._visual_obstacle_geom_id_set = set(self.visual_obstacle_geom_ids)
         self.fish_collision_geom_ids = self._fish_collision_geom_ids()
+        self.head_collision_geom_id = self._geom_id("head_dyn")
         self.spawn_collision_templates = self._build_spawn_collision_templates()
 
         self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(1,), dtype=np.float32)
@@ -135,6 +139,8 @@ class FishPathAvoidEnv(gym.Env):
                             -self.config.imu.accel_clip,
                             -self.config.imu.accel_clip,
                             -self.config.imu.gyro_clip,
+                            -self.config.imu.goal_relative_clip,
+                            -self.config.imu.goal_relative_clip,
                         ],
                         dtype=np.float32,
                     ),
@@ -143,6 +149,8 @@ class FishPathAvoidEnv(gym.Env):
                             self.config.imu.accel_clip,
                             self.config.imu.accel_clip,
                             self.config.imu.gyro_clip,
+                            self.config.imu.goal_relative_clip,
+                            self.config.imu.goal_relative_clip,
                         ],
                         dtype=np.float32,
                     ),
@@ -163,6 +171,7 @@ class FishPathAvoidEnv(gym.Env):
         self._completed_episode_head_video_frames: list[np.ndarray] = []
         self._completed_episode_index: int | None = None
         self._recorded_frame_counter = 0
+        self._record_current_episode = False
 
         self.elapsed_steps = 0
         self.episode_count = 0
@@ -204,6 +213,8 @@ class FishPathAvoidEnv(gym.Env):
         self.wall_collision = False
         self.out_of_bounds = False
         self.timeout = False
+        self.persistent_contact_steps = 0
+        self.persistent_contact_failure = False
 
     def _is_head_servo_drive_active(self, normalized_action: float) -> bool:
         return abs(normalized_action) > float(self.config.mapping.head_servo_command_deadband)
@@ -565,22 +576,18 @@ class FishPathAvoidEnv(gym.Env):
         goal_min = self.goal_center - self.goal_half_extents
         goal_max = self.goal_center + self.goal_half_extents
 
-        for geom_id in self.fish_collision_geom_ids:
-            geom_center = np.asarray(self.data.geom_xpos[geom_id][:2], dtype=float)
-            nearest_point = np.clip(geom_center, goal_min, goal_max)
-            planar_offset = geom_center - nearest_point
-            geom_type = int(self.model.geom_type[geom_id])
-            geom_size = np.asarray(self.model.geom_size[geom_id], dtype=float)
+        geom_center = np.asarray(self.data.geom_xpos[self.head_collision_geom_id][:2], dtype=float)
+        nearest_point = np.clip(geom_center, goal_min, goal_max)
+        planar_offset = geom_center - nearest_point
+        geom_type = int(self.model.geom_type[self.head_collision_geom_id])
+        geom_size = np.asarray(self.model.geom_size[self.head_collision_geom_id], dtype=float)
 
-            if geom_type == mujoco.mjtGeom.mjGEOM_BOX:
-                planar_radius = float(np.hypot(geom_size[0], geom_size[1]))
-            else:
-                planar_radius = float(max(geom_size[0], geom_size[1]))
+        if geom_type == mujoco.mjtGeom.mjGEOM_BOX:
+            planar_radius = float(np.hypot(geom_size[0], geom_size[1]))
+        else:
+            planar_radius = float(max(geom_size[0], geom_size[1]))
 
-            if float(np.linalg.norm(planar_offset)) <= planar_radius:
-                return True
-
-        return False
+        return float(np.linalg.norm(planar_offset)) <= planar_radius
 
     def _goal_distance_ratio(self) -> float:
         return float(np.clip(self.goal_distance / max(self.initial_goal_distance, 1e-6), 0.0, 1.0))
@@ -652,16 +659,22 @@ class FishPathAvoidEnv(gym.Env):
             renderer.disable_segmentation_rendering()
 
     def _begin_episode_recording(self) -> None:
-        if not self.enable_episode_recording:
+        if not self.enable_episode_recording or not self._record_current_episode:
+            self._episode_video_frames = []
+            self._episode_head_video_frames = []
+            self._recorded_frame_counter = 0
             return
         self._episode_video_frames = []
         self._episode_head_video_frames = []
         self._recorded_frame_counter = 0
 
     def _stash_completed_episode_video(self) -> None:
-        if not self.enable_episode_recording or not self._episode_video_frames:
+        if not self.enable_episode_recording or not self._record_current_episode or not self._episode_video_frames:
             self._episode_video_frames = []
             self._episode_head_video_frames = []
+            self._completed_episode_video_frames = []
+            self._completed_episode_head_video_frames = []
+            self._completed_episode_index = None
             return
         self._completed_episode_video_frames = self._episode_video_frames
         self._completed_episode_head_video_frames = self._episode_head_video_frames
@@ -670,7 +683,7 @@ class FishPathAvoidEnv(gym.Env):
         self._episode_head_video_frames = []
 
     def _capture_episode_frame(self, *, force: bool = False) -> None:
-        if not self.enable_episode_recording or self._video_renderer is None:
+        if not self.enable_episode_recording or not self._record_current_episode or self._video_renderer is None:
             return
         if not force and (self._recorded_frame_counter % self.recording_frame_stride) != 0:
             self._recorded_frame_counter += 1
@@ -841,6 +854,8 @@ class FishPathAvoidEnv(gym.Env):
         self.wall_collision = False
         self.out_of_bounds = False
         self.timeout = False
+        self.persistent_contact_steps = 0
+        self.persistent_contact_failure = False
         self.initial_goal_distance = 1.0
         if self.fixed_scenario is not None:
             initial_position, initial_heading = self._apply_fixed_scenario(self.fixed_scenario)
@@ -869,6 +884,10 @@ class FishPathAvoidEnv(gym.Env):
         self.initial_goal_distance = max(self.goal_distance, 1e-6)
         self.goal_progress_ratio = 0.0
         self._sync_mujoco_viewer(reset_timing=True)
+        next_episode_index = self.episode_count + 1
+        self._record_current_episode = bool(
+            self.enable_episode_recording and next_episode_index % self.record_every_n_episodes == 0
+        )
         self._begin_episode_recording()
         self._capture_episode_frame(force=True)
         self.episode_count += 1
@@ -902,10 +921,21 @@ class FishPathAvoidEnv(gym.Env):
                 self.tail_freq_target = head_angle_to_tail_frequency(self.theta_h, self.config.mapping)
                 self.tail_freq = self._apply_tail_freq_filter(self.tail_freq_target, timestep=self.sim_timestep)
                 self.tail_phase += 2.0 * math.pi * self.tail_freq * self.sim_timestep
-                back_servo_target = self.config.mapping.back_servo_amplitude * math.sin(self.tail_phase)
+                back_servo_limit = float(self.config.mapping.back_servo_amplitude)
+                if abs(self.theta_h) > float(self.config.mapping.back_servo_bias_head_deadband):
+                    configured_bias = float(self.config.mapping.back_servo_center_bias)
+                    back_servo_bias = math.copysign(
+                        min(abs(configured_bias), back_servo_limit),
+                        configured_bias * self.theta_h,
+                    )
+                else:
+                    back_servo_bias = 0.0
+                back_servo_wave_amplitude = max(0.0, back_servo_limit - abs(back_servo_bias))
+                back_servo_target = back_servo_bias + back_servo_wave_amplitude * math.sin(self.tail_phase)
                 self.back_servo_command = self._apply_back_servo_rate_limit(back_servo_target, timestep=self.sim_timestep)
                 self.data.ctrl[self.front_servo_act_id] = self.theta_m
                 self.data.ctrl[self.back_servo_act_id] = self.back_servo_command
+                apply_hydrodynamics(self.model, self.data)
                 mujoco.mj_step(self.model, self.data)
 
         self.elapsed_steps += 1
@@ -940,12 +970,27 @@ class FishPathAvoidEnv(gym.Env):
         info = self._build_info(reward_terms)
         return observation, reward, terminated, truncated, info
 
+    def _get_goal_relative_obs(self) -> np.ndarray:
+        relative_goal_world = np.asarray(self.goal_target - self.position, dtype=float)
+        relative_goal_body = world_to_body_vector(relative_goal_world, self.yaw)
+        goal_clip = float(self.config.imu.goal_relative_clip)
+        return np.array(
+            [
+                np.clip(relative_goal_body[0], -goal_clip, goal_clip),
+                np.clip(relative_goal_body[1], -goal_clip, goal_clip),
+            ],
+            dtype=np.float32,
+        )
+
     def _get_imu_obs(self) -> np.ndarray:
+        relative_goal_body = self._get_goal_relative_obs()
         return np.array(
             [
                 np.clip(self.imu_acceleration[0], -self.config.imu.accel_clip, self.config.imu.accel_clip),
                 np.clip(self.imu_acceleration[1], -self.config.imu.accel_clip, self.config.imu.accel_clip),
                 np.clip(self.yaw_rate, -self.config.imu.gyro_clip, self.config.imu.gyro_clip),
+                relative_goal_body[0],
+                relative_goal_body[1],
             ],
             dtype=np.float32,
         )
@@ -1022,7 +1067,6 @@ class FishPathAvoidEnv(gym.Env):
         del prev_visual_obstacle_obs
         del prev_wall_clearance
         del terminated
-        del truncated
 
         reward_cfg = self.config.reward
         obstacle_distance = self._current_obstacle_distance()
@@ -1038,6 +1082,7 @@ class FishPathAvoidEnv(gym.Env):
             "smooth_reward": float(reward_cfg.w_smooth * smooth_reward),
             "step_penalty": -float(reward_cfg.step_penalty),
             "wall_collision_cost": -float(reward_cfg.wall_collision_cost) if self.wall_collision else 0.0,
+            "timeout_penalty": -float(reward_cfg.timeout_penalty) if truncated else 0.0,
             "success_reward": float(reward_cfg.success_reward) if self.reached_goal else 0.0,
             "obstacle_distance": float(obstacle_distance) if math.isfinite(obstacle_distance) else math.inf,
             "heading_alignment_error": float(
@@ -1057,6 +1102,7 @@ class FishPathAvoidEnv(gym.Env):
             + reward_terms["smooth_reward"]
             + reward_terms["step_penalty"]
             + reward_terms["wall_collision_cost"]
+            + reward_terms["timeout_penalty"]
             + reward_terms["success_reward"]
         )
         return reward, reward_terms
@@ -1082,10 +1128,27 @@ class FishPathAvoidEnv(gym.Env):
             abs(self.position[0]) > self.config.pool_half_length
             or abs(self.position[1]) > self.config.pool_half_width
         )
-        return self.goal_hold_complete
+        if self.reached_goal:
+            self.persistent_contact_steps = 0
+            self.persistent_contact_failure = False
+        elif self.collided or self.wall_collision:
+            self.persistent_contact_steps += 1
+        else:
+            self.persistent_contact_steps = 0
+
+        self.persistent_contact_failure = bool(
+            not self.reached_goal
+            and self.persistent_contact_steps >= int(self.config.persistent_contact_termination_steps)
+        )
+        return self.goal_hold_complete or self.persistent_contact_failure
 
     def _check_truncated(self) -> bool:
         if int(self.config.max_episode_steps) <= 0:
+            self.timeout = False
+            return False
+        if self.reached_goal:
+            # Once the head has touched the goal region, treat the episode as successful
+            # and allow the post-goal recording window to finish instead of timing out.
             self.timeout = False
             return False
         self.timeout = self.elapsed_steps >= self.config.max_episode_steps
@@ -1094,6 +1157,8 @@ class FishPathAvoidEnv(gym.Env):
     def _termination_reason(self) -> str:
         if self.goal_hold_complete:
             return "goal_reached"
+        if self.persistent_contact_failure:
+            return "persistent_contact_failure"
         if self.timeout:
             return "timeout"
         if self.out_of_bounds:
@@ -1128,6 +1193,7 @@ class FishPathAvoidEnv(gym.Env):
 
     def _build_info(self, reward_terms: dict[str, float]) -> dict[str, Any]:
         lateral_goal_offset = float(self.position[1] - self.goal_center[1])
+        relative_goal_body = self._get_goal_relative_obs()
         info: dict[str, Any] = {
             "scenario_id": self.active_scenario_id,
             "termination_reason": self._termination_reason(),
@@ -1142,6 +1208,8 @@ class FishPathAvoidEnv(gym.Env):
             "imu_ax": float(self.imu_acceleration[0]),
             "imu_ay": float(self.imu_acceleration[1]),
             "imu_yaw_rate": float(self.yaw_rate),
+            "goal_dx_body": float(relative_goal_body[0]),
+            "goal_dy_body": float(relative_goal_body[1]),
             "raw_action": self.raw_action,
             "filtered_action": self.prev_action,
             "theta_m_target": self.theta_m_target,
@@ -1161,6 +1229,8 @@ class FishPathAvoidEnv(gym.Env):
             "success": self.reached_goal,
             "collision": self.collided,
             "wall_collision": self.wall_collision,
+            "persistent_contact_steps": int(self.persistent_contact_steps),
+            "persistent_contact_failure": self.persistent_contact_failure,
             "out_of_bounds": self.out_of_bounds,
             "timeout": self.timeout,
         }

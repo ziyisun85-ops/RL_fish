@@ -34,6 +34,7 @@ class CameraObsConfig:
 class ImuObsConfig:
     accel_clip: float = 50.0
     gyro_clip: float = 20.0
+    goal_relative_clip: float = 5.0
 
 
 @dataclass
@@ -47,19 +48,22 @@ class MappingConfig:
     servo_accel_deg_per_s2: float = 2200.0
     tail_servo_speed_sec_per_60deg: float = 0.18
     tail_servo_accel_deg_per_s2: float = 2600.0
-    # Paper Eq. (16)/(17): theta_h = arcsin((r * theta_m) / (eta * l)).
-    # These defaults are inferred from the current XML tendon radius and head linkage geometry.
+    # High-level map: theta_m_max corresponds to this maximum head deflection.
+    head_angle_max_deg: float = 70.0
+    # Legacy tendon geometry values kept for reference.
     servo_output_radius: float = 0.0375
     head_joint_arm_length: float = 0.0725
     head_transmission_efficiency: float = 1.00
-    base_tail_freq: float = 1.00
+    base_tail_freq: float = 0.70
     tail_freq_filter_tau: float = 0.18
-    # Paper Eq. (24): phidot = omega * (1 + k * sgn(theta_h) * |theta_h|).
-    # We apply the same multiplicative factor to the equivalent tail frequency.
+    # Symmetric tail-frequency boost: both left and right head deflections increase frequency.
     tail_freq_gain: float = 0.80
-    tail_freq_min: float = 0.50
-    tail_freq_max: float = 3.50
+    tail_freq_min: float = 0.5
+    tail_freq_max: float = 1.0
     back_servo_amplitude: float = 1.00
+    # Fixed tail-center offset applied when the head is deflected; use a negative value to flip the turn side.
+    back_servo_center_bias: float = 0.45
+    back_servo_bias_head_deadband: float = 1e-4
 
 
 @dataclass
@@ -78,13 +82,13 @@ class PathConfig:
 
 @dataclass
 class TaskConfig:
-    spawn_x_range: tuple[float, float] = (-1.45, -1.20)
-    spawn_y_range: tuple[float, float] = (-0.45, 0.45)
+    spawn_x_range: tuple[float, float] = (-2.20, -1.85)
+    spawn_y_range: tuple[float, float] = (-0.55, 0.55)
     spawn_yaw_range_deg: float = 8.0
     spawn_wall_margin: float = 0.06
     spawn_obstacle_margin: float = 0.05
     spawn_max_attempts: int = 200
-    goal_center: tuple[float, float] = (1.95, 0.0)
+    goal_center: tuple[float, float] = (2.55, 0.0)
     goal_half_extents: tuple[float, float] = (0.20, 0.35)
 
 
@@ -97,9 +101,9 @@ class ObstacleConfig:
     offset_min: float = 0.00
     offset_max: float = 0.00
     obstacle_spacing: float = 0.20
-    start_goal_clearance: float = 0.45
-    pair_progress_min: float = 0.42
-    pair_progress_max: float = 0.62
+    start_goal_clearance: float = 0.70
+    pair_progress_min: float = 0.46
+    pair_progress_max: float = 0.54
     pair_inner_gap_min: float = 0.04
     pair_inner_gap_max: float = 0.10
     obs_detect_range: float = 0.90
@@ -118,8 +122,9 @@ class RewardConfig:
     #       + w_smooth * r_smooth
     #       - step_penalty
     #       - wall_collision_cost * hit_wall
+    #       - timeout_penalty * timeout
     target_progress_scale: float = 1.0
-    success_reward: float = 12.0
+    success_reward: float = 60.0
     obstacle_safe_distance: float = 0.70
     obstacle_danger_distance: float = 0.08
     obstacle_collision_penalty: float = 1.0
@@ -128,7 +133,8 @@ class RewardConfig:
     smooth_action_delta_scale: float = 0.20
     step_penalty: float = 0.01
     wall_collision_cost: float = 12.0
-    w_target: float = 10.0
+    timeout_penalty: float = 8.0
+    w_target: float = 100.0
     w_obs: float = 14.0
     w_heading: float = 2.0
     w_smooth: float = 1.0
@@ -146,9 +152,10 @@ class FishEnvConfig:
     reward: RewardConfig = field(default_factory=RewardConfig)
     frame_skip: int = 20
     action_filter_tau: float = 0.04
-    max_episode_steps: int = 0
-    pool_half_length: float = 2.40
-    pool_half_width: float = 1.40
+    max_episode_steps: int = 5000
+    persistent_contact_termination_steps: int = 20
+    pool_half_length: float = 3.10
+    pool_half_width: float = 1.60
     fish_collision_radius: float = 0.18
     head_sensor_offset: float = 0.28
     render_size: tuple[int, int] = (900, 500)
@@ -177,7 +184,7 @@ class TrainConfig:
     save_policy_weights: bool = True
     monitor_filename: str = "monitor.csv"
     episode_metrics_filename: str = "episode_metrics.csv"
-    save_episode_videos: bool = True
+    save_episode_videos: bool = False
     video_interval_episodes: int = 5
     video_dirname: str = "videos"
     video_camera_name: str = "top"
