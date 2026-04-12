@@ -249,6 +249,7 @@ class EpisodeMetricsCallback(BaseCallback):
             return True
 
         infos = self.locals.get("infos", [])
+        wrote_row = False
         for info in infos:
             episode_info = info.get("episode")
             if episode_info is None:
@@ -274,6 +275,7 @@ class EpisodeMetricsCallback(BaseCallback):
                 "timeout": bool(info.get("timeout", False)),
             }
             self._writer.writerow(row)
+            wrote_row = True
             self._episode_counter += 1
             print(
                 "Episode "
@@ -281,7 +283,8 @@ class EpisodeMetricsCallback(BaseCallback):
                 f"reward={row['episode_reward']:.3f} | steps={row['episode_length']}"
             )
 
-        self._file.flush()
+        if wrote_row:
+            self._file.flush()
         return True
 
     def _on_training_end(self) -> None:

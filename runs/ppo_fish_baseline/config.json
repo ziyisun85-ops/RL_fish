@@ -22,7 +22,8 @@
     },
     "imu": {
       "accel_clip": 50.0,
-      "gyro_clip": 20.0
+      "gyro_clip": 20.0,
+      "goal_relative_clip": 5.0
     },
     "mapping": {
       "theta_m_max": 0.6,
@@ -96,7 +97,8 @@
       "smooth_action_delta_scale": 0.2,
       "step_penalty": 0.01,
       "wall_collision_cost": 12.0,
-      "w_target": 60.0,
+      "timeout_penalty": 8.0,
+      "w_target": 100.0,
       "w_obs": 14.0,
       "w_heading": 2.0,
       "w_smooth": 1.0,
@@ -104,7 +106,8 @@
     },
     "frame_skip": 20,
     "action_filter_tau": 0.04,
-    "max_episode_steps": 0,
+    "max_episode_steps": 5000,
+    "persistent_contact_termination_steps": 20,
     "pool_half_length": 3.1,
     "pool_half_width": 1.6,
     "fish_collision_radius": 0.18,
@@ -116,7 +119,7 @@
     "post_goal_duration_sec": 5.0
   },
   "train": {
-    "total_timesteps": 3000000,
+    "total_timesteps": 2000000,
     "num_envs": 1,
     "learning_rate": 0.0003,
     "n_steps": 1024,

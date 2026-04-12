@@ -116,9 +116,13 @@ class FishPathAvoidEnv(gym.Env):
         self.visual_obstacle_geom_ids = self._visual_obstacle_geom_ids()
         self.visual_obstacle_mocap_ids = self._visual_obstacle_mocap_ids()
         self._visual_obstacle_geom_id_set = set(self.visual_obstacle_geom_ids)
+        self._visual_obstacle_geom_ids_array = np.asarray(self.visual_obstacle_geom_ids, dtype=np.int32)
+        self._geom_type_code = int(mujoco.mjtObj.mjOBJ_GEOM)
         self.fish_collision_geom_ids = self._fish_collision_geom_ids()
+        self._fish_collision_planar_radii = self._build_fish_collision_planar_radii()
         self.head_collision_geom_id = self._geom_id("head_dyn")
         self.spawn_collision_templates = self._build_spawn_collision_templates()
+        self._head_sensor_offset_body = np.array([self.config.head_sensor_offset, 0.0], dtype=float)
 
         self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(1,), dtype=np.float32)
         self.observation_space = spaces.Dict(
@@ -333,6 +337,18 @@ class FishPathAvoidEnv(gym.Env):
         if not geom_ids:
             raise ValueError("No fish collision geoms were found for goal contact detection.")
         return geom_ids
+
+    def _build_fish_collision_planar_radii(self) -> dict[int, float]:
+        planar_radii: dict[int, float] = {}
+        for geom_id in self.fish_collision_geom_ids:
+            geom_type = int(self.model.geom_type[geom_id])
+            geom_size = self.model.geom_size[geom_id]
+            if geom_type == mujoco.mjtGeom.mjGEOM_BOX:
+                planar_radius = float(np.hypot(float(geom_size[0]), float(geom_size[1])))
+            else:
+                planar_radius = float(max(float(geom_size[0]), float(geom_size[1])))
+            planar_radii[geom_id] = planar_radius
+        return planar_radii
 
     def _build_spawn_collision_templates(self) -> list[tuple[np.ndarray, float]]:
         mujoco.mj_resetData(self.model, self.data)
@@ -754,8 +770,7 @@ class FishPathAvoidEnv(gym.Env):
         depth_map = np.nan_to_num(depth_map, nan=visibility_depth_cap, posinf=visibility_depth_cap, neginf=0.0)
         depth_map = np.clip(depth_map, 0.0, visibility_depth_cap)
 
-        geom_type_code = int(mujoco.mjtObj.mjOBJ_GEOM)
-        obstacle_mask = (obj_types == geom_type_code) & np.isin(geom_ids, list(self._visual_obstacle_geom_id_set))
+        obstacle_mask = (obj_types == self._geom_type_code) & np.isin(geom_ids, self._visual_obstacle_geom_ids_array)
         obstacle_mask &= depth_map <= visibility_depth_cap
         if not np.any(obstacle_mask):
             return VisualObstacleObservation.empty(visibility_depth_cap)
@@ -793,33 +808,29 @@ class FishPathAvoidEnv(gym.Env):
     def _compute_min_obstacle_clearance(self) -> float:
         if not self.obstacles:
             return math.inf
-        distances = [
-            np.linalg.norm(self.position - obstacle.center) - (obstacle.radius + self.config.fish_collision_radius)
-            for obstacle in self.obstacles
-        ]
-        return float(min(distances))
+        min_clearance = math.inf
+        collision_radius = float(self.config.fish_collision_radius)
+        for obstacle in self.obstacles:
+            dx = float(self.position[0] - obstacle.center[0])
+            dy = float(self.position[1] - obstacle.center[1])
+            clearance = math.hypot(dx, dy) - (float(obstacle.radius) + collision_radius)
+            if clearance < min_clearance:
+                min_clearance = clearance
+        return float(min_clearance)
 
     def _compute_min_wall_clearance(self) -> float:
-        wall_clearances: list[float] = []
+        min_clearance = math.inf
         for geom_id in self.fish_collision_geom_ids:
-            geom_center = np.asarray(self.data.geom_xpos[geom_id][:2], dtype=float)
-            geom_type = int(self.model.geom_type[geom_id])
-            geom_size = np.asarray(self.model.geom_size[geom_id], dtype=float)
-            if geom_type == mujoco.mjtGeom.mjGEOM_BOX:
-                planar_radius = float(np.hypot(geom_size[0], geom_size[1]))
-            else:
-                planar_radius = float(max(geom_size[0], geom_size[1]))
+            geom_center = self.data.geom_xpos[geom_id]
+            planar_radius = self._fish_collision_planar_radii[geom_id]
+            x_clearance = self.config.pool_half_length - abs(float(geom_center[0])) - planar_radius
+            y_clearance = self.config.pool_half_width - abs(float(geom_center[1])) - planar_radius
+            if x_clearance < min_clearance:
+                min_clearance = x_clearance
+            if y_clearance < min_clearance:
+                min_clearance = y_clearance
 
-            wall_clearances.extend(
-                [
-                    self.config.pool_half_length - abs(float(geom_center[0])) - planar_radius,
-                    self.config.pool_half_width - abs(float(geom_center[1])) - planar_radius,
-                ]
-            )
-
-        if not wall_clearances:
-            return math.inf
-        return float(min(wall_clearances))
+        return float(min_clearance)
 
     def reset(self, *, seed: int | None = None, options: dict[str, Any] | None = None) -> tuple[np.ndarray, dict[str, Any]]:
         super().reset(seed=seed)
@@ -846,7 +857,7 @@ class FishPathAvoidEnv(gym.Env):
         self.yaw_rate = 0.0
         self.prev_forward_speed = 0.0
         self.prev_lateral_speed = 0.0
-        self.imu_acceleration = np.zeros(2, dtype=float)
+        self.imu_acceleration[:] = 0.0
         self.reached_goal = False
         self.goal_hold_complete = False
         self.goal_reached_step = None
@@ -942,13 +953,9 @@ class FishPathAvoidEnv(gym.Env):
         self.prev_action = filtered_action
 
         self._update_cached_state()
-        self.imu_acceleration = np.array(
-            [
-                (self.forward_speed - self.prev_forward_speed) / max(self.control_timestep, 1e-8),
-                (self.lateral_speed - self.prev_lateral_speed) / max(self.control_timestep, 1e-8),
-            ],
-            dtype=float,
-        )
+        acceleration_scale = max(self.control_timestep, 1e-8)
+        self.imu_acceleration[0] = (self.forward_speed - self.prev_forward_speed) / acceleration_scale
+        self.imu_acceleration[1] = (self.lateral_speed - self.prev_lateral_speed) / acceleration_scale
         self.prev_forward_speed = self.forward_speed
         self.prev_lateral_speed = self.lateral_speed
         self._sync_mujoco_viewer()
@@ -1179,7 +1186,7 @@ class FishPathAvoidEnv(gym.Env):
 
     def _get_local_obstacle_observation(self) -> LocalObstacleObservation:
         sensor_position = self.position + body_to_world_vector(
-            np.array([self.config.head_sensor_offset, 0.0], dtype=float),
+            self._head_sensor_offset_body,
             self.yaw,
         )
         return get_local_obstacle_observation(

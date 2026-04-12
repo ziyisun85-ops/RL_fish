@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 
 import mujoco
@@ -78,16 +79,41 @@ def apply_hydrodynamics(
     next_normal_velocity_by_body: dict[int, float] = {}
     segment_yaw_moment = 0.0
     max_segment_force = 0.0
+    reference_x = float(reference_position[0])
+    reference_y = float(reference_position[1])
+    water_vx = float(water_velocity[0])
+    water_vy = float(water_velocity[1])
+    water_vz = float(water_velocity[2])
+    velocity = np.empty(6, dtype=np.float64)
+    yaw_torque_vector = np.zeros(3, dtype=np.float64)
 
     for segment in segments:
         body_id = segment.body_id
-        position = np.asarray(data.xpos[body_id], dtype=np.float64)
+        position = data.xpos[body_id]
         tangential_axis, normal_axis = _body_planar_axes(data, body_id)
-        _, linear_velocity = _body_velocity(model, data, body_id)
-        relative_velocity = linear_velocity - water_velocity
+        mujoco.mj_objectVelocity(
+            model,
+            data,
+            mujoco.mjtObj.mjOBJ_BODY,
+            body_id,
+            velocity,
+            0,
+        )
+        linear_velocity = velocity[3:]
 
-        tangential_speed = float(np.dot(relative_velocity, tangential_axis))
-        normal_speed = float(np.dot(relative_velocity, normal_axis))
+        relative_vx = float(linear_velocity[0] - water_vx)
+        relative_vy = float(linear_velocity[1] - water_vy)
+        relative_vz = float(linear_velocity[2] - water_vz)
+        tangential_speed = (
+            relative_vx * float(tangential_axis[0])
+            + relative_vy * float(tangential_axis[1])
+            + relative_vz * float(tangential_axis[2])
+        )
+        normal_speed = (
+            relative_vx * float(normal_axis[0])
+            + relative_vy * float(normal_axis[1])
+            + relative_vz * float(normal_axis[2])
+        )
         next_normal_velocity_by_body[body_id] = normal_speed
 
         tangential_force = -float(config.tangential_drag) * tangential_speed * tangential_axis
@@ -104,17 +130,18 @@ def apply_hydrodynamics(
 
         segment_force = tangential_force + normal_force + added_mass_force
         segment_force = _limit_vector(segment_force, float(config.max_segment_force))
-        force_norm = float(np.linalg.norm(segment_force))
+        force_norm = _vector_norm(segment_force)
         max_segment_force = max(max_segment_force, force_norm)
 
-        moment_arm = position - reference_position
-        segment_yaw_moment += float(np.cross(moment_arm, segment_force)[2])
+        moment_arm_x = float(position[0] - reference_x)
+        moment_arm_y = float(position[1] - reference_y)
+        segment_yaw_moment += moment_arm_x * float(segment_force[1]) - moment_arm_y * float(segment_force[0])
         mujoco.mj_applyFT(
             model,
             data,
             segment_force,
             _ZERO_TORQUE,
-            position.copy(),
+            position,
             body_id,
             data.qfrc_applied,
         )
@@ -135,15 +162,17 @@ def apply_hydrodynamics(
         float(config.max_yaw_torque),
     )
     if yaw_torque != 0.0:
+        yaw_torque_vector[2] = yaw_torque
         mujoco.mj_applyFT(
             model,
             data,
             _ZERO_FORCE,
-            np.array([0.0, 0.0, yaw_torque], dtype=np.float64),
-            reference_position.copy(),
+            yaw_torque_vector,
+            reference_position,
             centre_body_id,
             data.qfrc_applied,
         )
+        yaw_torque_vector[2] = 0.0
 
     _STATE_CACHE[id(data)] = _HydrodynamicsState(
         time=current_time,
@@ -267,12 +296,26 @@ def _body_velocity(
 
 def _body_planar_axes(data: mujoco.MjData, body_id: int) -> tuple[np.ndarray, np.ndarray]:
     rotation = np.asarray(data.xmat[body_id], dtype=np.float64).reshape(3, 3)
-    tangential_axis = rotation[:, 0].copy()
-    normal_axis = rotation[:, 1].copy()
-    tangential_axis[2] = 0.0
-    normal_axis[2] = 0.0
-    tangential_axis = _unit_or_default(tangential_axis, np.array([1.0, 0.0, 0.0], dtype=np.float64))
-    normal_axis = _unit_or_default(normal_axis, np.array([0.0, 1.0, 0.0], dtype=np.float64))
+    tangential_x = float(rotation[0, 0])
+    tangential_y = float(rotation[1, 0])
+    tangential_norm = math.hypot(tangential_x, tangential_y)
+    if tangential_norm <= 1e-12:
+        tangential_axis = np.array([1.0, 0.0, 0.0], dtype=np.float64)
+    else:
+        tangential_inv = 1.0 / tangential_norm
+        tangential_axis = np.array(
+            [tangential_x * tangential_inv, tangential_y * tangential_inv, 0.0],
+            dtype=np.float64,
+        )
+
+    normal_x = float(rotation[0, 1])
+    normal_y = float(rotation[1, 1])
+    normal_norm = math.hypot(normal_x, normal_y)
+    if normal_norm <= 1e-12:
+        normal_axis = np.array([0.0, 1.0, 0.0], dtype=np.float64)
+    else:
+        normal_inv = 1.0 / normal_norm
+        normal_axis = np.array([normal_x * normal_inv, normal_y * normal_inv, 0.0], dtype=np.float64)
     return tangential_axis, normal_axis
 
 
@@ -283,11 +326,15 @@ def _estimate_planar_yaw_inertia(
     reference_position: np.ndarray,
 ) -> float:
     yaw_inertia = 0.0
+    reference_x = float(reference_position[0])
+    reference_y = float(reference_position[1])
     for segment in segments:
         body_id = segment.body_id
-        moment_arm = np.asarray(data.xpos[body_id], dtype=np.float64) - reference_position
+        position = data.xpos[body_id]
+        dx = float(position[0] - reference_x)
+        dy = float(position[1] - reference_y)
         yaw_inertia += float(model.body_inertia[body_id][2])
-        yaw_inertia += segment.mass * float(moment_arm[0] ** 2 + moment_arm[1] ** 2)
+        yaw_inertia += segment.mass * (dx * dx + dy * dy)
     return max(yaw_inertia, 0.0)
 
 
@@ -301,7 +348,7 @@ def _unit_or_default(vector: np.ndarray, default: np.ndarray) -> np.ndarray:
 def _limit_vector(vector: np.ndarray, limit: float) -> np.ndarray:
     if limit <= 0.0:
         return vector
-    norm = float(np.linalg.norm(vector))
+    norm = _vector_norm(vector)
     if norm <= limit or norm <= 1e-12:
         return vector
     return vector * (limit / norm)
@@ -311,3 +358,11 @@ def _limit_scalar(value: float, limit: float) -> float:
     if limit <= 0.0:
         return float(value)
     return float(np.clip(value, -limit, limit))
+
+
+def _vector_norm(vector: np.ndarray) -> float:
+    return math.sqrt(
+        float(vector[0]) * float(vector[0])
+        + float(vector[1]) * float(vector[1])
+        + float(vector[2]) * float(vector[2])
+    )
