@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
+from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
@@ -71,3 +72,18 @@ def load_fixed_scenario(input_path: str | Path) -> FixedScenario:
         data = json.load(handle)
     return fixed_scenario_from_dict(data)
 
+
+@lru_cache(maxsize=None)
+def load_dataset_env_config_for_scenario(scenario_path: str | Path) -> dict[str, Any] | None:
+    path = Path(scenario_path).resolve()
+    for parent in path.parents:
+        manifest_path = parent / "dataset_manifest.json"
+        if not manifest_path.exists():
+            continue
+        with manifest_path.open("r", encoding="utf-8") as handle:
+            manifest = json.load(handle)
+        env_config = manifest.get("config", {}).get("env")
+        if isinstance(env_config, dict):
+            return env_config
+        return None
+    return None

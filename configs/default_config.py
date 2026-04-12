@@ -82,26 +82,26 @@ class PathConfig:
 
 @dataclass
 class TaskConfig:
-    spawn_x_range: tuple[float, float] = (-2.20, -1.85)
-    spawn_y_range: tuple[float, float] = (-0.55, 0.55)
+    spawn_x_range: tuple[float, float] = (-3.35, -2.95)
+    spawn_y_range: tuple[float, float] = (-0.85, 0.85)
     spawn_yaw_range_deg: float = 8.0
     spawn_wall_margin: float = 0.06
     spawn_obstacle_margin: float = 0.05
     spawn_max_attempts: int = 200
-    goal_center: tuple[float, float] = (2.55, 0.0)
-    goal_half_extents: tuple[float, float] = (0.20, 0.35)
+    goal_center: tuple[float, float] = (3.45, 0.0)
+    goal_half_extents: tuple[float, float] = (0.24, 0.40)
 
 
 @dataclass
 class ObstacleConfig:
-    min_count: int = 2
-    max_count: int = 2
-    radius_min: float = 0.12
+    min_count: int = 6
+    max_count: int = 8
+    radius_min: float = 0.11
     radius_max: float = 0.18
     offset_min: float = 0.00
     offset_max: float = 0.00
-    obstacle_spacing: float = 0.20
-    start_goal_clearance: float = 0.70
+    obstacle_spacing: float = 0.18
+    start_goal_clearance: float = 0.80
     pair_progress_min: float = 0.46
     pair_progress_max: float = 0.54
     pair_inner_gap_min: float = 0.04
@@ -154,8 +154,8 @@ class FishEnvConfig:
     action_filter_tau: float = 0.04
     max_episode_steps: int = 5000
     persistent_contact_termination_steps: int = 20
-    pool_half_length: float = 3.10
-    pool_half_width: float = 1.60
+    pool_half_length: float = 4.20
+    pool_half_width: float = 2.20
     fish_collision_radius: float = 0.18
     head_sensor_offset: float = 0.28
     render_size: tuple[int, int] = (900, 500)

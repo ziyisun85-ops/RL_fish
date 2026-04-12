@@ -13,6 +13,7 @@ from stable_baselines3.common.vec_env import DummyVecEnv, VecMonitor, VecTranspo
 
 from configs.default_config import PROJECT_ROOT, config_to_dict, make_config
 from envs import FishPathAvoidEnv
+from utils.policy_utils import load_actor_state_dict
 
 
 def parse_args() -> argparse.Namespace:
@@ -98,6 +99,12 @@ def parse_args() -> argparse.Namespace:
         default=500,
         help="Stop training after this many completed episodes. Use 0 or a negative value to disable the limit.",
     )
+    parser.add_argument(
+        "--bc-weights",
+        type=str,
+        default=None,
+        help="Initialize the PPO actor from a BC actor checkpoint saved by train_bc.py.",
+    )
     return parser.parse_args()
 
 
@@ -130,6 +137,18 @@ def resolve_resume_path(args: argparse.Namespace) -> Path | None:
     if resume_path.suffix.lower() != ".zip":
         raise ValueError(f"--resume-from must point to a .zip PPO model, got: {resume_path}")
     return resume_path
+
+
+def resolve_bc_weights_path(args: argparse.Namespace) -> Path | None:
+    if args.bc_weights is None:
+        return None
+
+    weights_path = Path(args.bc_weights).resolve()
+    if not weights_path.exists():
+        raise FileNotFoundError(f"BC actor checkpoint not found: {weights_path}")
+    if weights_path.suffix.lower() not in {".pth", ".pt"}:
+        raise ValueError(f"--bc-weights must point to a .pth or .pt file, got: {weights_path}")
+    return weights_path
 
 
 def _cpu_policy_state_dict(model: PPO) -> dict[str, torch.Tensor]:
@@ -545,6 +564,9 @@ def main() -> None:
     config = make_config()
     scenario_path = resolve_scenario_path(args)
     resume_path = resolve_resume_path(args)
+    bc_weights_path = resolve_bc_weights_path(args)
+    if resume_path is not None and bc_weights_path is not None:
+        raise ValueError("Use either --resume-from or --bc-weights, not both.")
     if args.timesteps is not None:
         config.train.total_timesteps = args.timesteps
     if args.num_envs is not None:
@@ -576,6 +598,8 @@ def main() -> None:
         config_payload["selected_scenario_path"] = str(scenario_path)
     if resume_path is not None:
         config_payload["resume_from"] = str(resume_path)
+    if bc_weights_path is not None:
+        config_payload["bc_weights"] = str(bc_weights_path)
     with (log_dir / "config.json").open("w", encoding="utf-8") as config_file:
         json.dump(config_payload, config_file, indent=2, ensure_ascii=False)
 
@@ -594,6 +618,8 @@ def main() -> None:
         print(f"Training on fixed scenario: {scenario_path}")
     if resume_path is not None:
         print(f"Resuming from model: {resume_path}")
+    if bc_weights_path is not None:
+        print(f"Initializing actor from BC weights: {bc_weights_path}")
     if config.train.save_episode_videos and config.train.video_interval_episodes > 1 and config.train.num_envs > 1:
         print(
             "Video capture is enabled with multiple environments. "
@@ -655,6 +681,15 @@ def main() -> None:
             seed=config.train.seed,
             device=requested_device,
         )
+        if bc_weights_path is not None:
+            bc_payload = torch.load(bc_weights_path, map_location="cpu")
+            actor_state_dict = bc_payload.get("actor_state_dict")
+            if not isinstance(actor_state_dict, dict):
+                raise KeyError(f"BC checkpoint does not contain 'actor_state_dict': {bc_weights_path}")
+            loaded_keys = load_actor_state_dict(model.policy, actor_state_dict)
+            if not loaded_keys:
+                raise RuntimeError(f"No actor parameters were loaded from BC checkpoint: {bc_weights_path}")
+            print(f"Loaded {len(loaded_keys)} BC actor parameter tensors into PPO.")
     checkpoint_callback = WeightCheckpointCallback(
         save_dir=checkpoint_dir,
         model_name=config.train.model_name,

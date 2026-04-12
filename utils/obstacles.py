@@ -95,7 +95,7 @@ def _corridor_frame(spawn_center: np.ndarray, goal_center: np.ndarray) -> tuple[
     return tangent, normal, segment_length
 
 
-def _sample_obstacle_pair(
+def _sample_random_obstacles(
     obstacle_config: ObstacleConfig,
     rng: np.random.Generator,
     pool_half_length: float,
@@ -105,69 +105,52 @@ def _sample_obstacle_pair(
     goal_center: np.ndarray,
     goal_half_extents: np.ndarray,
 ) -> list[CircularObstacle]:
-    spawn_center = 0.5 * (spawn_min + spawn_max)
     goal_min = goal_center - goal_half_extents
     goal_max = goal_center + goal_half_extents
-    tangent, normal, segment_length = _corridor_frame(spawn_center, goal_center)
+    requested_min = max(0, int(obstacle_config.min_count))
+    requested_max = max(requested_min, int(obstacle_config.max_count))
+    obstacle_count = int(rng.integers(requested_min, requested_max + 1))
+    placed_obstacles: list[CircularObstacle] = []
+    max_attempts = max(1, int(obstacle_config.max_sampling_attempts)) * max(obstacle_count, 1) * 10
 
     attempts = 0
-    while attempts < obstacle_config.max_sampling_attempts:
+    while attempts < max_attempts and len(placed_obstacles) < obstacle_count:
         attempts += 1
-        radius_a = float(rng.uniform(obstacle_config.radius_min, obstacle_config.radius_max))
-        radius_b = float(rng.uniform(obstacle_config.radius_min, obstacle_config.radius_max))
-        inner_gap = float(rng.uniform(obstacle_config.pair_inner_gap_min, obstacle_config.pair_inner_gap_max))
-        progress = float(rng.uniform(obstacle_config.pair_progress_min, obstacle_config.pair_progress_max))
+        radius = float(rng.uniform(obstacle_config.radius_min, obstacle_config.radius_max))
+        wall_margin = radius + 0.08
+        center = np.array(
+            [
+                float(rng.uniform(-pool_half_length + wall_margin, pool_half_length - wall_margin)),
+                float(rng.uniform(-pool_half_width + wall_margin, pool_half_width - wall_margin)),
+            ],
+            dtype=float,
+        )
 
-        longitudinal_margin = obstacle_config.start_goal_clearance + max(radius_a, radius_b)
-        progress_margin = float(np.clip(longitudinal_margin / max(segment_length, 1e-8), 0.0, 0.45))
-        progress = float(np.clip(progress, progress_margin, 1.0 - progress_margin))
-        anchor = spawn_center + progress * (goal_center - spawn_center)
-
-        lateral_offset_a = radius_a + 0.5 * inner_gap
-        lateral_offset_b = radius_b + 0.5 * inner_gap
-        centers_and_radii = [
-            (anchor + lateral_offset_a * normal, radius_a),
-            (anchor - lateral_offset_b * normal, radius_b),
-        ]
-
-        valid_pair = True
-        for center, radius in centers_and_radii:
-            wall_margin = radius + 0.06
-            if (
-                abs(center[0]) > pool_half_length - wall_margin
-                or abs(center[1]) > pool_half_width - wall_margin
-            ):
-                valid_pair = False
-                break
-
-            spawn_clearance = obstacle_config.start_goal_clearance + radius
-            if np.all(center >= spawn_min - spawn_clearance) and np.all(center <= spawn_max + spawn_clearance):
-                valid_pair = False
-                break
-
-            goal_clearance = obstacle_config.start_goal_clearance + radius
-            if np.all(center >= goal_min - goal_clearance) and np.all(center <= goal_max + goal_clearance):
-                valid_pair = False
-                break
-
-        if not valid_pair:
+        spawn_clearance = float(obstacle_config.start_goal_clearance) + radius
+        if np.all(center >= spawn_min - spawn_clearance) and np.all(center <= spawn_max + spawn_clearance):
             continue
 
-        return [
-            CircularObstacle(center=centers_and_radii[0][0].astype(float), radius=radius_a),
-            CircularObstacle(center=centers_and_radii[1][0].astype(float), radius=radius_b),
-        ]
+        goal_clearance = float(obstacle_config.start_goal_clearance) + radius
+        if np.all(center >= goal_min - goal_clearance) and np.all(center <= goal_max + goal_clearance):
+            continue
 
-    # Fallback to a deterministic center-blocking pair if random sampling failed.
-    fallback_progress = 0.52
-    anchor = spawn_center + fallback_progress * (goal_center - spawn_center)
+        collision_with_existing = False
+        for existing in placed_obstacles:
+            min_center_distance = float(existing.radius + radius + obstacle_config.obstacle_spacing)
+            if float(np.linalg.norm(center - existing.center)) <= min_center_distance:
+                collision_with_existing = True
+                break
+        if collision_with_existing:
+            continue
+
+        placed_obstacles.append(CircularObstacle(center=center.astype(float), radius=radius))
+
+    if placed_obstacles:
+        return placed_obstacles
+
     fallback_radius = 0.5 * (obstacle_config.radius_min + obstacle_config.radius_max)
-    fallback_gap = obstacle_config.pair_inner_gap_min
-    offset = fallback_radius + 0.5 * fallback_gap
-    return [
-        CircularObstacle(center=(anchor + offset * normal).astype(float), radius=fallback_radius),
-        CircularObstacle(center=(anchor - offset * normal).astype(float), radius=fallback_radius),
-    ]
+    fallback_center = np.array([0.0, 0.0], dtype=float)
+    return [CircularObstacle(center=fallback_center, radius=fallback_radius)]
 
 
 def sample_circular_obstacles(
@@ -182,7 +165,7 @@ def sample_circular_obstacles(
 ) -> list[CircularObstacle]:
     spawn_min = np.array([spawn_x_range[0], spawn_y_range[0]], dtype=float)
     spawn_max = np.array([spawn_x_range[1], spawn_y_range[1]], dtype=float)
-    return _sample_obstacle_pair(
+    return _sample_random_obstacles(
         obstacle_config=obstacle_config,
         rng=rng,
         pool_half_length=pool_half_length,

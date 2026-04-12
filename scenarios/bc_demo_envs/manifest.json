@@ -1,0 +1,20 @@
+{
+  "count": 3,
+  "scenarios": [
+    {
+      "scenario_id": "training_env_01",
+      "source_seed": 101,
+      "path": "G:\\Code\\Python\\RL_fish\\scenarios\\bc_demo_envs\\training_env_01.json"
+    },
+    {
+      "scenario_id": "training_env_02",
+      "source_seed": 102,
+      "path": "G:\\Code\\Python\\RL_fish\\scenarios\\bc_demo_envs\\training_env_02.json"
+    },
+    {
+      "scenario_id": "training_env_03",
+      "source_seed": 103,
+      "path": "G:\\Code\\Python\\RL_fish\\scenarios\\bc_demo_envs\\training_env_03.json"
+    }
+  ]
+}

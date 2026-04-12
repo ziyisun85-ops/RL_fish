@@ -2,10 +2,12 @@ from __future__ import annotations
 
 import math
 import time
+from copy import deepcopy
 from contextlib import nullcontext
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
+from collections.abc import Callable
 
 import gymnasium as gym
 import mujoco
@@ -22,7 +24,7 @@ from utils.obstacles import (
     get_local_obstacle_observation,
     sample_circular_obstacles,
 )
-from utils.scenario_io import FixedScenario, load_fixed_scenario
+from utils.scenario_io import FixedScenario, load_dataset_env_config_for_scenario, load_fixed_scenario
 
 
 @dataclass
@@ -58,13 +60,14 @@ class FishPathAvoidEnv(gym.Env):
         recording_height: int = 270,
         recording_frame_stride: int = 4,
         record_every_n_episodes: int = 1,
+        viewer_key_callback: Callable[[int], None] | None = None,
         scenario_path: str | Path | None = None,
     ) -> None:
         super().__init__()
         if render_mode not in (None, "human", "rgb_array"):
             raise ValueError(f"Unsupported render_mode: {render_mode}")
 
-        self.config = config or make_config().env
+        self.config = deepcopy(config or make_config().env)
         self.render_mode = render_mode
         self.enable_mujoco_viewer = enable_mujoco_viewer
         self.realtime_playback = realtime_playback
@@ -75,7 +78,11 @@ class FishPathAvoidEnv(gym.Env):
         self.recording_height = max(64, int(recording_height))
         self.recording_frame_stride = max(1, int(recording_frame_stride))
         self.record_every_n_episodes = max(1, int(record_every_n_episodes))
+        self.viewer_key_callback = viewer_key_callback
         self.scenario_path = None if scenario_path is None else Path(scenario_path).resolve()
+        self._apply_dataset_env_overrides(
+            None if self.scenario_path is None else load_dataset_env_config_for_scenario(self.scenario_path),
+        )
         self.fixed_scenario = None if self.scenario_path is None else load_fixed_scenario(self.scenario_path)
         self.active_scenario_id = None if self.fixed_scenario is None else self.fixed_scenario.scenario_id
 
@@ -112,6 +119,12 @@ class FishPathAvoidEnv(gym.Env):
         self.root_yaw_qveladr = self._joint_qveladr("root_yaw")
         self.front_servo_qposadr = self._joint_qposadr("front_servo")
         self.back_servo_qposadr = self._joint_qposadr("back_servo")
+        self.water_volume_geom_id = self._geom_id("water_volume")
+        self.pool_floor_geom_id = self._geom_id("pool_floor")
+        self.pool_wall_front_geom_id = self._geom_id("pool_wall_front")
+        self.pool_wall_back_geom_id = self._geom_id("pool_wall_back")
+        self.pool_wall_left_geom_id = self._geom_id("pool_wall_left")
+        self.pool_wall_right_geom_id = self._geom_id("pool_wall_right")
         self.goal_region_geom_id = self._geom_id("goal_region_marker")
         self.visual_obstacle_geom_ids = self._visual_obstacle_geom_ids()
         self.visual_obstacle_mocap_ids = self._visual_obstacle_mocap_ids()
@@ -123,6 +136,11 @@ class FishPathAvoidEnv(gym.Env):
         self.head_collision_geom_id = self._geom_id("head_dyn")
         self.spawn_collision_templates = self._build_spawn_collision_templates()
         self._head_sensor_offset_body = np.array([self.config.head_sensor_offset, 0.0], dtype=float)
+        self._pool_water_half_height = float(self.model.geom_size[self.water_volume_geom_id][2])
+        self._pool_floor_half_thickness = float(self.model.geom_size[self.pool_floor_geom_id][2])
+        self._pool_wall_half_thickness = float(self.model.geom_size[self.pool_wall_front_geom_id][0])
+        self._pool_wall_half_height = float(self.model.geom_size[self.pool_wall_front_geom_id][2])
+        self._pool_wall_z = float(self.model.geom_pos[self.pool_wall_front_geom_id][2])
 
         self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(1,), dtype=np.float32)
         self.observation_space = spaces.Dict(
@@ -237,11 +255,15 @@ class FishPathAvoidEnv(gym.Env):
         self._viewer = viewer.launch_passive(
             self.model,
             self.data,
+            key_callback=self.viewer_key_callback,
             show_left_ui=False,
             show_right_ui=False,
         )
         self._viewer_last_wall_time = time.perf_counter()
         self._viewer_last_sim_time = float(self.data.time)
+
+    def is_viewer_running(self) -> bool:
+        return self._get_mujoco_viewer() is not None
 
     def _viewer_lock(self):
         viewer = self._get_mujoco_viewer()
@@ -295,6 +317,78 @@ class FishPathAvoidEnv(gym.Env):
         if joint_id < 0:
             raise ValueError(f"Joint not found in XML: {joint_name}")
         return int(self.model.jnt_dofadr[joint_id])
+
+    def _apply_dataset_env_overrides(self, env_config: dict[str, Any] | None) -> None:
+        if not env_config:
+            return
+
+        pool_half_length = env_config.get("pool_half_length")
+        pool_half_width = env_config.get("pool_half_width")
+        render_size = env_config.get("render_size")
+
+        if pool_half_length is not None:
+            self.config.pool_half_length = float(pool_half_length)
+        if pool_half_width is not None:
+            self.config.pool_half_width = float(pool_half_width)
+        if isinstance(render_size, (list, tuple)) and len(render_size) == 2:
+            self.config.render_size = (int(render_size[0]), int(render_size[1]))
+
+    def _sync_pool_geometry(self) -> None:
+        pool_half_length = float(self.config.pool_half_length)
+        pool_half_width = float(self.config.pool_half_width)
+        wall_half_thickness = self._pool_wall_half_thickness
+        wall_half_height = self._pool_wall_half_height
+        water_half_height = self._pool_water_half_height
+        floor_half_thickness = self._pool_floor_half_thickness
+
+        self.model.geom_size[self.water_volume_geom_id] = np.array(
+            [pool_half_length, pool_half_width, water_half_height],
+            dtype=float,
+        )
+        self.model.geom_size[self.pool_floor_geom_id] = np.array(
+            [pool_half_length + wall_half_thickness, pool_half_width + wall_half_thickness, floor_half_thickness],
+            dtype=float,
+        )
+        self.model.geom_pos[self.pool_floor_geom_id] = np.array(
+            [0.0, 0.0, -(water_half_height + floor_half_thickness)],
+            dtype=float,
+        )
+
+        self.model.geom_size[self.pool_wall_front_geom_id] = np.array(
+            [wall_half_thickness, pool_half_width, wall_half_height],
+            dtype=float,
+        )
+        self.model.geom_pos[self.pool_wall_front_geom_id] = np.array(
+            [pool_half_length + wall_half_thickness, 0.0, self._pool_wall_z],
+            dtype=float,
+        )
+
+        self.model.geom_size[self.pool_wall_back_geom_id] = np.array(
+            [wall_half_thickness, pool_half_width, wall_half_height],
+            dtype=float,
+        )
+        self.model.geom_pos[self.pool_wall_back_geom_id] = np.array(
+            [-(pool_half_length + wall_half_thickness), 0.0, self._pool_wall_z],
+            dtype=float,
+        )
+
+        self.model.geom_size[self.pool_wall_left_geom_id] = np.array(
+            [pool_half_length, wall_half_thickness, wall_half_height],
+            dtype=float,
+        )
+        self.model.geom_pos[self.pool_wall_left_geom_id] = np.array(
+            [0.0, pool_half_width + wall_half_thickness, self._pool_wall_z],
+            dtype=float,
+        )
+
+        self.model.geom_size[self.pool_wall_right_geom_id] = np.array(
+            [pool_half_length, wall_half_thickness, wall_half_height],
+            dtype=float,
+        )
+        self.model.geom_pos[self.pool_wall_right_geom_id] = np.array(
+            [0.0, -(pool_half_width + wall_half_thickness), self._pool_wall_z],
+            dtype=float,
+        )
 
     def _set_pose(self, position: np.ndarray, yaw: float) -> None:
         self.data.qpos[self.root_x_qposadr] = float(position[0])
@@ -878,6 +972,7 @@ class FishPathAvoidEnv(gym.Env):
 
         with self._viewer_lock():
             mujoco.mj_resetData(self.model, self.data)
+            self._sync_pool_geometry()
             self._sync_goal_region_marker()
             self._sync_visual_obstacles()
             self._set_pose(initial_position, initial_heading)
