@@ -689,6 +689,7 @@ class EpisodeArtifactCallback(BaseCallback):
         fps: int,
         save_policy_weights: bool,
         initial_completed_episodes: int = 0,
+        save_checkpoint_artifacts: bool = True,
     ) -> None:
         super().__init__(verbose=0)
         self.video_dir = video_dir
@@ -698,6 +699,7 @@ class EpisodeArtifactCallback(BaseCallback):
         self.fps = max(1, int(fps))
         self.save_policy_weights = save_policy_weights
         self.completed_episodes = max(0, int(initial_completed_episodes))
+        self.save_checkpoint_artifacts = bool(save_checkpoint_artifacts)
         self._envs: list[FishPathAvoidEnv] = []
         self.top_video_dir = self.video_dir / "top_view"
         self.head_video_dir = self.video_dir / "head Cemara"
@@ -730,19 +732,26 @@ class EpisodeArtifactCallback(BaseCallback):
                 head_video_path,
                 fps=self.fps,
             )
-            model_path, weights_path = save_training_artifacts(
-                model=self.model,
-                save_dir=self.checkpoint_dir,
-                model_name=self.model_name,
-                save_policy_weights=self.save_policy_weights,
-                suffix=episode_suffix,
-            )
+            model_path: Path | None = None
+            weights_path: Path | None = None
+            if self.save_checkpoint_artifacts:
+                model_path, weights_path = save_training_artifacts(
+                    model=self.model,
+                    save_dir=self.checkpoint_dir,
+                    model_name=self.model_name,
+                    save_policy_weights=self.save_policy_weights,
+                    suffix=episode_suffix,
+                )
             weights_message = f", weights to {weights_path}" if weights_path is not None else ""
             if saved_path is not None:
                 head_message = f"; head camera video to {saved_head_path}" if saved_head_path is not None else ""
-                print(f"Saved episode video to {saved_path}{head_message}; checkpoint to {model_path}{weights_message}")
+                if model_path is not None:
+                    print(f"Saved episode video to {saved_path}{head_message}; checkpoint to {model_path}{weights_message}")
+                else:
+                    print(f"Saved episode video to {saved_path}{head_message}")
             else:
-                print(f"Saved episode checkpoint to {model_path}{weights_message}")
+                if model_path is not None:
+                    print(f"Saved episode checkpoint to {model_path}{weights_message}")
 
         return True
 
@@ -1138,6 +1147,8 @@ def main() -> None:
         if rollout_step_budget <= 0:
             raise ValueError("Episode-cycle PPO requires a positive rollout step budget.")
         config.train.n_steps = int(rollout_step_budget)
+        if args.video_interval_episodes is None:
+            config.train.video_interval_episodes = int(rollout_episodes_per_update)
 
     log_dir = Path(config.train.log_dir)
     if scenario_path is not None:
@@ -1325,6 +1336,10 @@ def main() -> None:
         if episode_cycle_enabled:
             model_kwargs["rollout_episodes_per_update"] = int(rollout_episodes_per_update)
             model_kwargs["strict_episode_budget"] = bool(args.strict_rollout_step_budget)
+            model_kwargs["post_update_save_dir"] = str(checkpoint_dir)
+            model_kwargs["post_update_model_name"] = config.train.model_name
+            model_kwargs["post_update_save_policy_weights"] = bool(config.train.save_policy_weights)
+            model_kwargs["post_update_save_every_iterations"] = 1
         model = algorithm_class(**model_kwargs)
 
         if resume_path is not None:
@@ -1375,7 +1390,7 @@ def main() -> None:
                 moving_average_window=args.reward_plot_window,
             )
         )
-    if config.train.video_interval_episodes > 0:
+    if config.train.video_interval_episodes > 0 and (config.train.save_episode_videos or not episode_cycle_enabled):
         callback_list.append(
             EpisodeArtifactCallback(
                 video_dir=video_dir,
@@ -1385,6 +1400,7 @@ def main() -> None:
                 fps=config.train.video_fps,
                 save_policy_weights=config.train.save_policy_weights,
                 initial_completed_episodes=existing_episode_count,
+                save_checkpoint_artifacts=not episode_cycle_enabled,
             )
         )
     if convergence_enabled:
