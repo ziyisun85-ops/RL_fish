@@ -7,7 +7,7 @@ from contextlib import nullcontext
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 
 import gymnasium as gym
 import mujoco
@@ -62,10 +62,13 @@ class FishPathAvoidEnv(gym.Env):
         record_every_n_episodes: int = 1,
         viewer_key_callback: Callable[[int], None] | None = None,
         scenario_path: str | Path | None = None,
+        scenario_cycle_paths: Sequence[str | Path] | None = None,
     ) -> None:
         super().__init__()
         if render_mode not in (None, "human", "rgb_array"):
             raise ValueError(f"Unsupported render_mode: {render_mode}")
+        if scenario_path is not None and scenario_cycle_paths is not None:
+            raise ValueError("Use either scenario_path or scenario_cycle_paths, not both.")
 
         self.config = deepcopy(config or make_config().env)
         self.render_mode = render_mode
@@ -80,11 +83,22 @@ class FishPathAvoidEnv(gym.Env):
         self.record_every_n_episodes = max(1, int(record_every_n_episodes))
         self.viewer_key_callback = viewer_key_callback
         self.scenario_path = None if scenario_path is None else Path(scenario_path).resolve()
+        self.scenario_cycle_paths = (
+            None
+            if scenario_cycle_paths is None
+            else tuple(Path(path).resolve() for path in scenario_cycle_paths)
+        )
+        self.active_scenario_path = None if self.scenario_path is None else self.scenario_path
         self._apply_dataset_env_overrides(
             None if self.scenario_path is None else load_dataset_env_config_for_scenario(self.scenario_path),
         )
         self.fixed_scenario = None if self.scenario_path is None else load_fixed_scenario(self.scenario_path)
         self.active_scenario_id = None if self.fixed_scenario is None else self.fixed_scenario.scenario_id
+        self._scenario_cycle_index = 0
+        self._scenario_cycle_entries: list[tuple[Path, FixedScenario]] = []
+        self._scenario_cycle_manifest_ref: dict[str, Any] | None = None
+        if self.scenario_cycle_paths is not None:
+            self._prepare_scenario_cycle(self.scenario_cycle_paths)
 
         self.model_path = Path(self.config.model.xml_path).resolve()
         if not self.model_path.exists():
@@ -332,6 +346,44 @@ class FishPathAvoidEnv(gym.Env):
             self.config.pool_half_width = float(pool_half_width)
         if isinstance(render_size, (list, tuple)) and len(render_size) == 2:
             self.config.render_size = (int(render_size[0]), int(render_size[1]))
+
+    def _prepare_scenario_cycle(self, scenario_paths: Sequence[Path]) -> None:
+        if not scenario_paths:
+            raise ValueError("scenario_cycle_paths cannot be empty.")
+
+        reference_env_config: dict[str, Any] | None = None
+        entries: list[tuple[Path, FixedScenario]] = []
+        for scenario_path in scenario_paths:
+            if not scenario_path.exists():
+                raise FileNotFoundError(f"Scenario JSON not found: {scenario_path}")
+            env_config = load_dataset_env_config_for_scenario(scenario_path)
+            if reference_env_config is None:
+                reference_env_config = deepcopy(env_config) if env_config is not None else None
+            elif env_config != reference_env_config:
+                raise ValueError(
+                    "All scenario_cycle_paths must come from the same dataset env config. "
+                    f"Mismatched manifest config detected at {scenario_path}."
+                )
+            entries.append((scenario_path, load_fixed_scenario(scenario_path)))
+
+        self._scenario_cycle_entries = entries
+        self._scenario_cycle_manifest_ref = reference_env_config
+        self._apply_dataset_env_overrides(reference_env_config)
+        first_path, first_scenario = self._scenario_cycle_entries[0]
+        self.scenario_path = first_path
+        self.active_scenario_path = first_path
+        self.fixed_scenario = first_scenario
+        self.active_scenario_id = first_scenario.scenario_id
+
+    def _advance_scenario_cycle(self) -> None:
+        if not self._scenario_cycle_entries:
+            return
+        path, scenario = self._scenario_cycle_entries[self._scenario_cycle_index]
+        self._scenario_cycle_index = (self._scenario_cycle_index + 1) % len(self._scenario_cycle_entries)
+        self.scenario_path = path
+        self.active_scenario_path = path
+        self.fixed_scenario = scenario
+        self.active_scenario_id = scenario.scenario_id
 
     def _sync_pool_geometry(self) -> None:
         pool_half_length = float(self.config.pool_half_length)
@@ -962,6 +1014,8 @@ class FishPathAvoidEnv(gym.Env):
         self.persistent_contact_steps = 0
         self.persistent_contact_failure = False
         self.initial_goal_distance = 1.0
+        if self._scenario_cycle_entries:
+            self._advance_scenario_cycle()
         if self.fixed_scenario is not None:
             initial_position, initial_heading = self._apply_fixed_scenario(self.fixed_scenario)
         else:
@@ -1125,14 +1179,18 @@ class FishPathAvoidEnv(gym.Env):
     def _obstacle_avoidance_reward(self, obstacle_distance: float) -> float:
         reward_cfg = self.config.reward
         safe_distance = max(float(reward_cfg.obstacle_safe_distance), 1e-6)
+        buffer_distance = max(float(reward_cfg.obstacle_buffer_distance), safe_distance)
         danger_distance = float(
             np.clip(reward_cfg.obstacle_danger_distance, 0.0, safe_distance - 1e-6),
         )
 
-        if not math.isfinite(obstacle_distance) or obstacle_distance >= safe_distance:
+        if not math.isfinite(obstacle_distance) or obstacle_distance >= buffer_distance:
             return 0.0
         if obstacle_distance <= danger_distance:
             return -float(reward_cfg.obstacle_collision_penalty)
+        if obstacle_distance > safe_distance:
+            normalized_buffer_gap = (buffer_distance - obstacle_distance) / max(buffer_distance - safe_distance, 1e-6)
+            return -float(reward_cfg.obstacle_buffer_penalty * normalized_buffer_gap)
 
         normalized_gap = (safe_distance - obstacle_distance) / max(safe_distance - danger_distance, 1e-6)
         return -float(normalized_gap**2)
@@ -1298,6 +1356,7 @@ class FishPathAvoidEnv(gym.Env):
         relative_goal_body = self._get_goal_relative_obs()
         info: dict[str, Any] = {
             "scenario_id": self.active_scenario_id,
+            "scenario_path": None if self.active_scenario_path is None else str(self.active_scenario_path),
             "termination_reason": self._termination_reason(),
             "episode_return": self.episode_return,
             "goal_progress_ratio": self.goal_progress_ratio,

@@ -15,9 +15,11 @@ from stable_baselines3 import PPO
 from stable_baselines3.common.callbacks import BaseCallback, CallbackList
 from stable_baselines3.common.vec_env import DummyVecEnv, VecMonitor, VecTransposeImage
 
+from algorithms import EpisodeCyclePPO
 from configs.default_config import PROJECT_ROOT, config_to_dict, make_config
 from envs import FishPathAvoidEnv
-from utils.policy_utils import load_actor_state_dict
+from utils.lora_policy import DEFAULT_LORA_TARGET_MODULES, LoraMultiInputPolicy
+from utils.policy_utils import load_actor_state_dict, load_matching_policy_state_dict
 
 
 EPISODE_METRICS_FIELDNAMES = [
@@ -135,6 +137,81 @@ def parse_args() -> argparse.Namespace:
         help="Initialize the PPO actor from a BC actor checkpoint saved by train_bc.py.",
     )
     parser.add_argument(
+        "--scenario-cycle-dir",
+        type=str,
+        default=None,
+        help="Directory of fixed scenario JSON files used in cyclic multi-scene training.",
+    )
+    parser.add_argument(
+        "--scenario-cycle-glob",
+        type=str,
+        default="*.json",
+        help="Glob pattern used inside --scenario-cycle-dir.",
+    )
+    parser.add_argument(
+        "--scenario-cycle-list",
+        type=str,
+        default=None,
+        help="Optional JSON file defining an explicit per-episode scenario cycle order.",
+    )
+    parser.add_argument(
+        "--scenario-cycle-start-index",
+        type=int,
+        default=None,
+        help="Optional 1-based start offset applied to the selected scenario cycle.",
+    )
+    parser.add_argument(
+        "--scenario-cycle-end-index",
+        type=int,
+        default=None,
+        help="Optional 1-based end offset applied to the selected scenario cycle.",
+    )
+    parser.add_argument(
+        "--rollout-episodes-per-update",
+        type=int,
+        default=0,
+        help="When positive, collect this many completed episodes before each PPO update. Requires scenario-cycle mode.",
+    )
+    parser.add_argument(
+        "--rollout-step-budget",
+        type=int,
+        default=0,
+        help="Maximum rollout buffer steps reserved for one PPO update in episode-cycle mode. Defaults to max_episode_steps * rollout_episodes_per_update.",
+    )
+    parser.add_argument(
+        "--strict-rollout-step-budget",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Stop with an error if episode-cycle rollout hits the step budget before collecting the requested number of episodes.",
+    )
+    parser.add_argument(
+        "--use-lora",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+        help="Enable LoRA-based PPO fine-tuning instead of full actor finetuning.",
+    )
+    parser.add_argument("--lora-rank", type=int, default=4, help="LoRA rank used when --use-lora is enabled.")
+    parser.add_argument("--lora-alpha", type=float, default=8.0, help="LoRA alpha used when --use-lora is enabled.")
+    parser.add_argument("--lora-dropout", type=float, default=0.0, help="LoRA dropout used when --use-lora is enabled.")
+    parser.add_argument(
+        "--lora-target-modules",
+        nargs="+",
+        default=list(DEFAULT_LORA_TARGET_MODULES),
+        help="Exact linear module names patched with LoRA.",
+    )
+    parser.add_argument(
+        "--lora-freeze-actor-base",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Freeze original actor weights and train only LoRA adapters, actor log_std, and critic parameters.",
+    )
+    parser.add_argument(
+        "--lora-train-bias",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+        help="Allow actor bias terms to remain trainable in LoRA mode.",
+    )
+    parser.add_argument(
         "--run-id",
         type=str,
         default=None,
@@ -204,6 +281,68 @@ def resolve_scenario_path(args: argparse.Namespace) -> Path | None:
     return scenario_path
 
 
+def resolve_scenario_cycle_paths(args: argparse.Namespace) -> list[Path]:
+    if args.scenario_cycle_dir is None and args.scenario_cycle_list is None:
+        return []
+
+    if args.scenario_cycle_dir is not None and args.scenario_cycle_list is not None:
+        raise ValueError("Use either --scenario-cycle-dir or --scenario-cycle-list, not both.")
+
+    if args.scenario_cycle_list is not None:
+        scenario_list_path = Path(args.scenario_cycle_list).resolve()
+        if not scenario_list_path.exists():
+            raise FileNotFoundError(f"Scenario cycle list not found: {scenario_list_path}")
+        payload = json.loads(scenario_list_path.read_text(encoding="utf-8"))
+        if isinstance(payload, dict):
+            items = payload.get("scenarios")
+            if items is None:
+                raise KeyError(f"Scenario cycle JSON must contain a 'scenarios' key: {scenario_list_path}")
+        elif isinstance(payload, list):
+            items = payload
+        else:
+            raise TypeError(f"Unsupported scenario cycle JSON format: {scenario_list_path}")
+
+        base_dir = scenario_list_path.parent
+        matched: list[Path] = []
+        for item in items:
+            if isinstance(item, str):
+                raw_path = item
+            elif isinstance(item, dict):
+                raw_path = item.get("scenario_path") or item.get("path")
+                if raw_path is None:
+                    raise KeyError(f"Scenario cycle entry is missing scenario_path/path: {item}")
+            else:
+                raise TypeError(f"Unsupported scenario cycle entry: {item!r}")
+            resolved = Path(raw_path)
+            if not resolved.is_absolute():
+                resolved = (base_dir / resolved).resolve()
+            else:
+                resolved = resolved.resolve()
+            if not resolved.exists():
+                raise FileNotFoundError(f"Scenario JSON from cycle list does not exist: {resolved}")
+            matched.append(resolved)
+    else:
+        scenario_dir = Path(args.scenario_cycle_dir).resolve()
+        if not scenario_dir.exists():
+            raise FileNotFoundError(f"Scenario cycle directory not found: {scenario_dir}")
+        matched = sorted(path.resolve() for path in scenario_dir.glob(args.scenario_cycle_glob) if path.is_file())
+        if not matched:
+            raise FileNotFoundError(
+                f"No scenarios matched {args.scenario_cycle_glob!r} in {scenario_dir}"
+            )
+
+    start_index = 1 if args.scenario_cycle_start_index is None else int(args.scenario_cycle_start_index)
+    end_index = len(matched) if args.scenario_cycle_end_index is None else int(args.scenario_cycle_end_index)
+    if start_index <= 0 or end_index <= 0:
+        raise ValueError("--scenario-cycle-start-index and --scenario-cycle-end-index must be positive.")
+    if start_index > end_index:
+        raise ValueError("--scenario-cycle-start-index cannot be greater than --scenario-cycle-end-index.")
+    selected = matched[start_index - 1 : end_index]
+    if not selected:
+        raise RuntimeError("The requested scenario cycle selection is empty.")
+    return selected
+
+
 def resolve_resume_path(args: argparse.Namespace) -> Path | None:
     if args.resume_from is None:
         return None
@@ -231,6 +370,31 @@ def resolve_bc_weights_path(args: argparse.Namespace) -> Path | None:
 def _cpu_policy_state_dict(model: PPO) -> dict[str, torch.Tensor]:
     policy_state = model.policy.state_dict()
     return {key: value.detach().cpu() for key, value in policy_state.items()}
+
+
+def _load_resume_policy_snapshot(
+    resume_path: Path,
+    *,
+    device: str,
+    algorithm_class: type[PPO],
+) -> tuple[dict[str, torch.Tensor], int]:
+    try:
+        loaded_model = algorithm_class.load(str(resume_path), device=device)
+    except Exception:
+        loaded_model = PPO.load(str(resume_path), device=device)
+    policy_state = _cpu_policy_state_dict(loaded_model)
+    num_timesteps = int(loaded_model.num_timesteps)
+    return policy_state, num_timesteps
+
+
+def _estimate_rollout_buffer_bytes(max_steps: int, env_config) -> int:
+    image_height = int(env_config.camera.height)
+    image_width = int(env_config.camera.width)
+    image_bytes = int(max_steps) * image_height * image_width * 3
+    imu_bytes = int(max_steps) * 5 * 4
+    scalar_bytes = int(max_steps) * 6 * 4
+    action_bytes = int(max_steps) * 4
+    return image_bytes + imu_bytes + scalar_bytes + action_bytes
 
 
 def _unwrap_vec_env_envs(vec_env) -> list[FishPathAvoidEnv]:
@@ -474,7 +638,7 @@ class EpisodeMetricsCallback(BaseCallback):
             self.completed_episodes_this_run += 1
             row = {
                 "run_id": self.run_id,
-                "scenario_path": self.scenario_path,
+                "scenario_path": str(info.get("scenario_path", self.scenario_path) or self.scenario_path),
                 "scenario_id": str(info.get("scenario_id", "")),
                 "episode_index": int(self._episode_counter),
                 "num_timesteps": int(self.num_timesteps),
@@ -916,11 +1080,14 @@ def main() -> None:
     args = parse_args()
     config = make_config()
     scenario_path = resolve_scenario_path(args)
+    scenario_cycle_paths = resolve_scenario_cycle_paths(args)
     resume_path = resolve_resume_path(args)
     bc_weights_path = resolve_bc_weights_path(args)
     run_id = _sanitize_run_id(args.run_id or _default_run_id())
     if resume_path is not None and bc_weights_path is not None:
         raise ValueError("Use either --resume-from or --bc-weights, not both.")
+    if scenario_path is not None and scenario_cycle_paths:
+        raise ValueError("Use either single-scenario mode or scenario-cycle mode, not both.")
     if args.timesteps is not None:
         config.train.total_timesteps = args.timesteps
     if args.num_envs is not None:
@@ -941,13 +1108,42 @@ def main() -> None:
         raise ValueError("--convergence-window must be non-negative.")
     if args.convergence_min_episodes < 0:
         raise ValueError("--convergence-min-episodes must be non-negative.")
+    if args.rollout_episodes_per_update < 0:
+        raise ValueError("--rollout-episodes-per-update must be non-negative.")
+    if args.rollout_step_budget < 0:
+        raise ValueError("--rollout-step-budget must be non-negative.")
+    if args.use_lora and args.lora_rank <= 0:
+        raise ValueError("--lora-rank must be positive when --use-lora is enabled.")
 
     convergence_enabled = int(args.convergence_window) > 0
     convergence_min_episodes = int(args.convergence_min_episodes) if int(args.convergence_min_episodes) > 0 else int(args.convergence_window)
+    rollout_episodes_per_update = int(args.rollout_episodes_per_update)
+    if scenario_cycle_paths and rollout_episodes_per_update <= 0:
+        rollout_episodes_per_update = len(scenario_cycle_paths)
+    if rollout_episodes_per_update > 0 and not scenario_cycle_paths:
+        raise ValueError("--rollout-episodes-per-update requires scenario-cycle mode.")
+    episode_cycle_enabled = rollout_episodes_per_update > 0
+    if scenario_cycle_paths and config.train.num_envs != 1:
+        raise ValueError("Scenario-cycle mode currently requires --num-envs 1.")
+    if episode_cycle_enabled and convergence_enabled:
+        print("Warning: convergence stop in scenario-cycle mode measures the mixed 100-scene stream, not per-scene convergence.")
+
+    rollout_step_budget = 0
+    if episode_cycle_enabled:
+        rollout_step_budget = (
+            int(args.rollout_step_budget)
+            if int(args.rollout_step_budget) > 0
+            else int(config.env.max_episode_steps) * int(rollout_episodes_per_update)
+        )
+        if rollout_step_budget <= 0:
+            raise ValueError("Episode-cycle PPO requires a positive rollout step budget.")
+        config.train.n_steps = int(rollout_step_budget)
 
     log_dir = Path(config.train.log_dir)
     if scenario_path is not None:
         log_dir = log_dir / scenario_path.stem
+    elif scenario_cycle_paths:
+        log_dir = log_dir / "scenario_cycle"
     checkpoint_dir = log_dir / config.train.checkpoint_dirname
     episode_metrics_path = log_dir / config.train.episode_metrics_filename
     video_dir = log_dir / config.train.video_dirname
@@ -972,6 +1168,21 @@ def main() -> None:
     config_payload["episode_metrics_path"] = str(episode_metrics_path)
     config_payload["reward_plot_path"] = str(reward_plot_path)
     config_payload["existing_episode_count_at_start"] = int(existing_episode_count)
+    config_payload["lora"] = {
+        "enabled": bool(args.use_lora),
+        "rank": int(args.lora_rank),
+        "alpha": float(args.lora_alpha),
+        "dropout": float(args.lora_dropout),
+        "target_modules": list(args.lora_target_modules),
+        "freeze_actor_base": bool(args.lora_freeze_actor_base),
+        "train_bias": bool(args.lora_train_bias),
+    }
+    config_payload["rollout_schedule"] = {
+        "episode_cycle_enabled": episode_cycle_enabled,
+        "episodes_per_update": int(rollout_episodes_per_update),
+        "step_budget": int(rollout_step_budget),
+        "strict_step_budget": bool(args.strict_rollout_step_budget),
+    }
     config_payload["convergence"] = {
         "enabled": convergence_enabled,
         "window_episodes": int(args.convergence_window),
@@ -984,6 +1195,8 @@ def main() -> None:
     }
     if scenario_path is not None:
         config_payload["selected_scenario_path"] = str(scenario_path)
+    if scenario_cycle_paths:
+        config_payload["selected_scenario_cycle_paths"] = [str(path) for path in scenario_cycle_paths]
     if resume_path is not None:
         config_payload["resume_from"] = str(resume_path)
     if bc_weights_path is not None:
@@ -1005,10 +1218,22 @@ def main() -> None:
     print(f"Run ID: {run_id}")
     if scenario_path is not None:
         print(f"Training on fixed scenario: {scenario_path}")
+    if scenario_cycle_paths:
+        print(
+            "Training on scenario cycle: "
+            f"{len(scenario_cycle_paths)} scenes, "
+            f"{rollout_episodes_per_update} episodes/update, "
+            f"step budget {rollout_step_budget}"
+        )
     if resume_path is not None:
         print(f"Resuming from model: {resume_path}")
     if bc_weights_path is not None:
         print(f"Initializing actor from BC weights: {bc_weights_path}")
+    if args.use_lora:
+        print(
+            "LoRA fine-tuning enabled: "
+            f"rank={args.lora_rank}, alpha={args.lora_alpha}, dropout={args.lora_dropout}"
+        )
     if existing_episode_count > 0:
         print(f"Appending to existing episode metrics with starting episode index {existing_episode_count}.")
     if config.train.save_episode_videos and config.train.video_interval_episodes > 1 and config.train.num_envs > 1:
@@ -1023,6 +1248,9 @@ def main() -> None:
             "Episodes still count correctly, but asynchronous completion makes the stopping point less interpretable. "
             "Use --num-envs 1 for deterministic per-scenario convergence windows."
         )
+    if episode_cycle_enabled:
+        estimated_buffer_bytes = _estimate_rollout_buffer_bytes(rollout_step_budget, config.env)
+        print(f"Approx rollout observation buffer: {estimated_buffer_bytes / (1024 ** 3):.2f} GiB")
 
     record_every_n_episodes = 1
     if config.train.save_episode_videos and config.train.video_interval_episodes > 0 and config.train.num_envs == 1:
@@ -1042,6 +1270,7 @@ def main() -> None:
                 recording_frame_stride=config.train.video_frame_stride,
                 record_every_n_episodes=record_every_n_episodes,
                 scenario_path=scenario_path,
+                scenario_cycle_paths=scenario_cycle_paths if scenario_cycle_paths else None,
             )
             env.reset(seed=config.train.seed + rank)
             return env
@@ -1053,7 +1282,22 @@ def main() -> None:
     env = VecTransposeImage(env)
 
     # The policy consumes a dict observation: {"image": head camera RGB, "imu": body-frame IMU vector}.
-    if resume_path is not None:
+    algorithm_class: type[PPO] = EpisodeCyclePPO if episode_cycle_enabled else PPO
+    policy_spec = LoraMultiInputPolicy if args.use_lora else "MultiInputPolicy"
+    policy_kwargs: dict[str, Any] = {"net_arch": list(config.train.policy_hidden_sizes)}
+    if args.use_lora:
+        policy_kwargs.update(
+            {
+                "lora_rank": int(args.lora_rank),
+                "lora_alpha": float(args.lora_alpha),
+                "lora_dropout": float(args.lora_dropout),
+                "lora_target_modules": tuple(str(name) for name in args.lora_target_modules),
+                "lora_freeze_actor_base": bool(args.lora_freeze_actor_base),
+                "lora_train_bias": bool(args.lora_train_bias),
+            }
+        )
+
+    if resume_path is not None and not args.use_lora and not episode_cycle_enabled:
         model = PPO.load(
             str(resume_path),
             env=env,
@@ -1061,24 +1305,42 @@ def main() -> None:
         )
         print(f"Loaded model with existing num_timesteps={int(model.num_timesteps)}")
     else:
-        model = PPO(
-            policy="MultiInputPolicy",
-            env=env,
-            learning_rate=config.train.learning_rate,
-            n_steps=config.train.n_steps,
-            batch_size=config.train.batch_size,
-            gamma=config.train.gamma,
-            gae_lambda=config.train.gae_lambda,
-            clip_range=config.train.clip_range,
-            ent_coef=config.train.ent_coef,
-            vf_coef=config.train.vf_coef,
-            max_grad_norm=config.train.max_grad_norm,
-            policy_kwargs={"net_arch": list(config.train.policy_hidden_sizes)},
-            verbose=1,
-            seed=config.train.seed,
-            device=requested_device,
-        )
-        if bc_weights_path is not None:
+        model_kwargs: dict[str, Any] = {
+            "policy": policy_spec,
+            "env": env,
+            "learning_rate": config.train.learning_rate,
+            "n_steps": config.train.n_steps,
+            "batch_size": config.train.batch_size,
+            "gamma": config.train.gamma,
+            "gae_lambda": config.train.gae_lambda,
+            "clip_range": config.train.clip_range,
+            "ent_coef": config.train.ent_coef,
+            "vf_coef": config.train.vf_coef,
+            "max_grad_norm": config.train.max_grad_norm,
+            "policy_kwargs": policy_kwargs,
+            "verbose": 1,
+            "seed": config.train.seed,
+            "device": requested_device,
+        }
+        if episode_cycle_enabled:
+            model_kwargs["rollout_episodes_per_update"] = int(rollout_episodes_per_update)
+            model_kwargs["strict_episode_budget"] = bool(args.strict_rollout_step_budget)
+        model = algorithm_class(**model_kwargs)
+
+        if resume_path is not None:
+            resume_policy_state, resume_num_timesteps = _load_resume_policy_snapshot(
+                resume_path,
+                device=requested_device,
+                algorithm_class=algorithm_class,
+            )
+            loaded_keys, skipped_keys = load_matching_policy_state_dict(model.policy, resume_policy_state)
+            if not loaded_keys:
+                raise RuntimeError(f"No policy tensors were loaded from resume checkpoint: {resume_path}")
+            model.num_timesteps = int(resume_num_timesteps)
+            print(f"Initialized {len(loaded_keys)} policy tensors from resume checkpoint.")
+            if skipped_keys:
+                print(f"Skipped {len(set(skipped_keys))} unmatched tensors while converting resume checkpoint.")
+        elif bc_weights_path is not None:
             bc_payload = torch.load(bc_weights_path, map_location="cpu")
             actor_state_dict = bc_payload.get("actor_state_dict")
             if not isinstance(actor_state_dict, dict):
@@ -1200,6 +1462,7 @@ def main() -> None:
     training_summary = {
         "run_id": run_id,
         "scenario_path": None if scenario_path is None else str(scenario_path),
+        "scenario_cycle_paths": None if not scenario_cycle_paths else [str(path) for path in scenario_cycle_paths],
         "resume_from": None if resume_path is None else str(resume_path),
         "bc_weights": None if bc_weights_path is None else str(bc_weights_path),
         "device": requested_device,
@@ -1213,6 +1476,9 @@ def main() -> None:
         "episodes_completed_total": int(existing_episode_count + episode_metrics_callback.completed_episodes_this_run),
         "num_timesteps": int(model.num_timesteps),
         "stop_reason": stop_reason,
+        "lora_enabled": bool(args.use_lora),
+        "rollout_episodes_per_update": int(rollout_episodes_per_update),
+        "rollout_step_budget": int(rollout_step_budget),
         "converged": bool(convergence_callback.converged) if convergence_callback is not None else False,
         "convergence_summary": None if convergence_callback is None else convergence_callback.summary,
         "latest_window_summary": None if convergence_callback is None else convergence_callback.latest_window_summary,

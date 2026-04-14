@@ -188,3 +188,54 @@ def load_actor_state_dict(policy, actor_state_dict: dict[str, torch.Tensor]) -> 
         buffer.data.copy_(value)
         loaded_keys.append(key)
     return loaded_keys
+
+
+def load_matching_policy_state_dict(policy, state_dict: dict[str, torch.Tensor]) -> tuple[list[str], list[str]]:
+    loaded_keys: list[str] = []
+    skipped_keys: list[str] = []
+
+    def candidate_keys(key: str) -> list[str]:
+        candidates = [key]
+        if key.startswith("pi_features_extractor."):
+            candidates.append(f"features_extractor.{key.split('.', 1)[1]}")
+        if key.startswith("vf_features_extractor."):
+            candidates.append(f"features_extractor.{key.split('.', 1)[1]}")
+        return candidates
+
+    named_parameters = dict(policy.named_parameters())
+    for key, value in state_dict.items():
+        parameter = None
+        target_key = key
+        for candidate in candidate_keys(key):
+            parameter = named_parameters.get(candidate)
+            if parameter is not None:
+                target_key = candidate
+                break
+        if parameter is None:
+            skipped_keys.append(key)
+            continue
+        if tuple(parameter.shape) != tuple(value.shape):
+            skipped_keys.append(key)
+            continue
+        parameter.data.copy_(value.to(device=parameter.device, dtype=parameter.dtype))
+        loaded_keys.append(target_key)
+
+    named_buffers = dict(policy.named_buffers())
+    for key, value in state_dict.items():
+        buffer = None
+        target_key = key
+        for candidate in candidate_keys(key):
+            buffer = named_buffers.get(candidate)
+            if buffer is not None:
+                target_key = candidate
+                break
+        if buffer is None:
+            continue
+        if tuple(buffer.shape) != tuple(value.shape):
+            skipped_keys.append(key)
+            continue
+        buffer.data.copy_(value.to(device=buffer.device, dtype=buffer.dtype))
+        if target_key not in loaded_keys:
+            loaded_keys.append(target_key)
+
+    return loaded_keys, skipped_keys
