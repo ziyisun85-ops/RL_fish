@@ -3,7 +3,11 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import os
+from collections import deque
+from datetime import datetime
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 import torch
@@ -14,6 +18,31 @@ from stable_baselines3.common.vec_env import DummyVecEnv, VecMonitor, VecTranspo
 from configs.default_config import PROJECT_ROOT, config_to_dict, make_config
 from envs import FishPathAvoidEnv
 from utils.policy_utils import load_actor_state_dict
+
+
+EPISODE_METRICS_FIELDNAMES = [
+    "run_id",
+    "scenario_path",
+    "scenario_id",
+    "episode_index",
+    "num_timesteps",
+    "episode_reward",
+    "episode_length",
+    "episode_time_sec",
+    "termination_reason",
+    "episode_return",
+    "goal_progress_ratio",
+    "distance_to_goal_region",
+    "visual_obstacle_detected",
+    "visual_obstacle_pixel_fraction",
+    "visual_obstacle_center_fraction",
+    "visual_obstacle_nearest_depth",
+    "success",
+    "collision",
+    "wall_collision",
+    "out_of_bounds",
+    "timeout",
+]
 
 
 def parse_args() -> argparse.Namespace:
@@ -105,6 +134,54 @@ def parse_args() -> argparse.Namespace:
         default=None,
         help="Initialize the PPO actor from a BC actor checkpoint saved by train_bc.py.",
     )
+    parser.add_argument(
+        "--run-id",
+        type=str,
+        default=None,
+        help="Optional run identifier used for per-run monitor/config/summary files. Defaults to a timestamp.",
+    )
+    parser.add_argument(
+        "--convergence-window",
+        type=int,
+        default=0,
+        help="Enable convergence stopping with a sliding window of this many completed episodes. Set 0 to disable.",
+    )
+    parser.add_argument(
+        "--convergence-min-episodes",
+        type=int,
+        default=0,
+        help="Minimum total completed episodes before convergence can trigger. Defaults to --convergence-window.",
+    )
+    parser.add_argument(
+        "--convergence-min-success-rate",
+        type=float,
+        default=0.90,
+        help="Minimum success rate required over the convergence window.",
+    )
+    parser.add_argument(
+        "--convergence-max-timeout-rate",
+        type=float,
+        default=0.10,
+        help="Maximum timeout rate allowed over the convergence window.",
+    )
+    parser.add_argument(
+        "--convergence-max-failure-rate",
+        type=float,
+        default=0.10,
+        help="Maximum failure rate allowed over the convergence window. Failure means obstacle collision, wall collision, or out-of-bounds.",
+    )
+    parser.add_argument(
+        "--convergence-reward-window",
+        type=int,
+        default=20,
+        help="Window length used for reward stability comparison. Set 0 to disable reward stability checking.",
+    )
+    parser.add_argument(
+        "--convergence-reward-stability-ratio",
+        type=float,
+        default=0.05,
+        help="Maximum relative change allowed between the previous and latest reward windows. Set a negative value to disable.",
+    )
     return parser.parse_args()
 
 
@@ -164,6 +241,124 @@ def _unwrap_vec_env_envs(vec_env) -> list[FishPathAvoidEnv]:
     if envs is None:
         raise TypeError(f"Unsupported VecEnv wrapper chain: {type(current)!r}")
     return list(envs)
+
+
+def _default_run_id() -> str:
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    return f"{timestamp}_p{os.getpid()}"
+
+
+def _sanitize_run_id(run_id: str) -> str:
+    cleaned = "".join(character if character.isalnum() or character in {"-", "_"} else "_" for character in run_id)
+    cleaned = cleaned.strip("_")
+    return cleaned or _default_run_id()
+
+
+def _with_run_id(path: Path, run_id: str) -> Path:
+    return path.with_name(f"{path.stem}_{run_id}{path.suffix}")
+
+
+def _parse_csv_bool(value: Any) -> bool:
+    if isinstance(value, bool):
+        return value
+    return str(value).strip().lower() in {"1", "true", "yes", "y", "t"}
+
+
+def _parse_csv_float(value: Any, default: float = 0.0) -> float:
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return float(default)
+
+
+def _parse_csv_int(value: Any, default: int = 0) -> int:
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return int(default)
+
+
+def _write_json(path: Path, payload: dict[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", encoding="utf-8") as file:
+        json.dump(payload, file, indent=2, ensure_ascii=False)
+
+
+def _convert_legacy_episode_row(
+    row: dict[str, str],
+    *,
+    episode_index: int,
+    scenario_path: Path | None,
+) -> dict[str, Any]:
+    return {
+        "run_id": row.get("run_id", "legacy"),
+        "scenario_path": row.get("scenario_path", "" if scenario_path is None else str(scenario_path)),
+        "scenario_id": row.get("scenario_id", ""),
+        "episode_index": int(episode_index),
+        "num_timesteps": _parse_csv_int(row.get("num_timesteps"), 0),
+        "episode_reward": _parse_csv_float(row.get("episode_reward"), 0.0),
+        "episode_length": _parse_csv_int(row.get("episode_length"), 0),
+        "episode_time_sec": _parse_csv_float(row.get("episode_time_sec"), 0.0),
+        "termination_reason": str(row.get("termination_reason", "unknown")),
+        "episode_return": _parse_csv_float(row.get("episode_return", row.get("episode_reward", 0.0)), 0.0),
+        "goal_progress_ratio": _parse_csv_float(row.get("goal_progress_ratio"), 0.0),
+        "distance_to_goal_region": _parse_csv_float(row.get("distance_to_goal_region"), 0.0),
+        "visual_obstacle_detected": _parse_csv_bool(row.get("visual_obstacle_detected")),
+        "visual_obstacle_pixel_fraction": _parse_csv_float(row.get("visual_obstacle_pixel_fraction"), 0.0),
+        "visual_obstacle_center_fraction": _parse_csv_float(row.get("visual_obstacle_center_fraction"), 0.0),
+        "visual_obstacle_nearest_depth": _parse_csv_float(row.get("visual_obstacle_nearest_depth"), 0.0),
+        "success": _parse_csv_bool(row.get("success")),
+        "collision": _parse_csv_bool(row.get("collision")),
+        "wall_collision": _parse_csv_bool(row.get("wall_collision")),
+        "out_of_bounds": _parse_csv_bool(row.get("out_of_bounds")),
+        "timeout": _parse_csv_bool(row.get("timeout")),
+    }
+
+
+def prepare_episode_metrics_csv(csv_path: Path, scenario_path: Path | None) -> int:
+    if not csv_path.exists():
+        return 0
+
+    with csv_path.open("r", newline="", encoding="utf-8") as file:
+        reader = csv.DictReader(file)
+        fieldnames = list(reader.fieldnames or [])
+        rows = list(reader)
+
+    if fieldnames == EPISODE_METRICS_FIELDNAMES:
+        return len(rows)
+
+    backup_path = _with_run_id(csv_path, f"legacy_{datetime.now().strftime('%Y%m%d_%H%M%S')}")
+    csv_path.replace(backup_path)
+
+    with csv_path.open("w", newline="", encoding="utf-8") as file:
+        writer = csv.DictWriter(file, fieldnames=EPISODE_METRICS_FIELDNAMES)
+        writer.writeheader()
+        for episode_index, row in enumerate(rows, start=1):
+            writer.writerow(_convert_legacy_episode_row(row, episode_index=episode_index, scenario_path=scenario_path))
+
+    print(f"Upgraded legacy episode metrics file. Backup saved to {backup_path}")
+    return len(rows)
+
+
+def load_recent_episode_history(csv_path: Path, max_rows: int) -> list[dict[str, Any]]:
+    if max_rows <= 0 or not csv_path.exists():
+        return []
+
+    recent_rows: deque[dict[str, Any]] = deque(maxlen=max_rows)
+    with csv_path.open("r", newline="", encoding="utf-8") as file:
+        reader = csv.DictReader(file)
+        for row in reader:
+            recent_rows.append(
+                {
+                    "episode_reward": _parse_csv_float(row.get("episode_reward"), 0.0),
+                    "success": _parse_csv_bool(row.get("success")),
+                    "collision": _parse_csv_bool(row.get("collision")),
+                    "wall_collision": _parse_csv_bool(row.get("wall_collision")),
+                    "out_of_bounds": _parse_csv_bool(row.get("out_of_bounds")),
+                    "timeout": _parse_csv_bool(row.get("timeout")),
+                }
+            )
+    return list(recent_rows)
 
 
 def save_training_artifacts(
@@ -230,38 +425,39 @@ class WeightCheckpointCallback(BaseCallback):
 
 
 class EpisodeMetricsCallback(BaseCallback):
-    def __init__(self, csv_path: Path) -> None:
+    def __init__(
+        self,
+        csv_path: Path,
+        *,
+        run_id: str,
+        scenario_path: Path | None,
+        initial_episode_index: int = 0,
+        append: bool = True,
+    ) -> None:
         super().__init__(verbose=0)
         self.csv_path = csv_path
-        self._fieldnames = [
-            "num_timesteps",
-            "episode_reward",
-            "episode_length",
-            "episode_time_sec",
-            "termination_reason",
-            "episode_return",
-            "goal_progress_ratio",
-            "distance_to_goal_region",
-            "visual_obstacle_detected",
-            "visual_obstacle_pixel_fraction",
-            "visual_obstacle_center_fraction",
-            "visual_obstacle_nearest_depth",
-            "success",
-            "collision",
-            "wall_collision",
-            "out_of_bounds",
-            "timeout",
-        ]
+        self.run_id = run_id
+        self.scenario_path = "" if scenario_path is None else str(scenario_path)
+        self.initial_episode_index = max(0, int(initial_episode_index))
+        self.append = bool(append)
         self._file = None
         self._writer = None
-        self._episode_counter = 0
+        self._episode_counter = self.initial_episode_index
+        self.completed_episodes_this_run = 0
 
     def _on_training_start(self) -> None:
         self.csv_path.parent.mkdir(parents=True, exist_ok=True)
-        self._file = self.csv_path.open("w", newline="", encoding="utf-8")
-        self._writer = csv.DictWriter(self._file, fieldnames=self._fieldnames)
-        self._writer.writeheader()
-        self._file.flush()
+        write_header = True
+        mode = "w"
+        if self.append and self.csv_path.exists():
+            mode = "a"
+            write_header = self.csv_path.stat().st_size <= 0
+
+        self._file = self.csv_path.open(mode, newline="", encoding="utf-8")
+        self._writer = csv.DictWriter(self._file, fieldnames=EPISODE_METRICS_FIELDNAMES)
+        if write_header:
+            self._writer.writeheader()
+            self._file.flush()
 
     def _on_step(self) -> bool:
         if self._writer is None or self._file is None:
@@ -274,7 +470,13 @@ class EpisodeMetricsCallback(BaseCallback):
             if episode_info is None:
                 continue
 
+            self._episode_counter += 1
+            self.completed_episodes_this_run += 1
             row = {
+                "run_id": self.run_id,
+                "scenario_path": self.scenario_path,
+                "scenario_id": str(info.get("scenario_id", "")),
+                "episode_index": int(self._episode_counter),
                 "num_timesteps": int(self.num_timesteps),
                 "episode_reward": float(episode_info.get("r", 0.0)),
                 "episode_length": int(episode_info.get("l", 0)),
@@ -295,7 +497,6 @@ class EpisodeMetricsCallback(BaseCallback):
             }
             self._writer.writerow(row)
             wrote_row = True
-            self._episode_counter += 1
             print(
                 "Episode "
                 f"{self._episode_counter} stopped: {row['termination_reason']} | "
@@ -323,6 +524,7 @@ class EpisodeArtifactCallback(BaseCallback):
         save_every_episodes: int,
         fps: int,
         save_policy_weights: bool,
+        initial_completed_episodes: int = 0,
     ) -> None:
         super().__init__(verbose=0)
         self.video_dir = video_dir
@@ -331,7 +533,7 @@ class EpisodeArtifactCallback(BaseCallback):
         self.save_every_episodes = max(0, int(save_every_episodes))
         self.fps = max(1, int(fps))
         self.save_policy_weights = save_policy_weights
-        self.completed_episodes = 0
+        self.completed_episodes = max(0, int(initial_completed_episodes))
         self._envs: list[FishPathAvoidEnv] = []
         self.top_video_dir = self.video_dir / "top_view"
         self.head_video_dir = self.video_dir / "head Cemara"
@@ -371,10 +573,12 @@ class EpisodeArtifactCallback(BaseCallback):
                 save_policy_weights=self.save_policy_weights,
                 suffix=episode_suffix,
             )
+            weights_message = f", weights to {weights_path}" if weights_path is not None else ""
             if saved_path is not None:
-                weights_message = f", weights to {weights_path}" if weights_path is not None else ""
                 head_message = f"; head camera video to {saved_head_path}" if saved_head_path is not None else ""
                 print(f"Saved episode video to {saved_path}{head_message}; checkpoint to {model_path}{weights_message}")
+            else:
+                print(f"Saved episode checkpoint to {model_path}{weights_message}")
 
         return True
 
@@ -384,6 +588,7 @@ class StopAfterEpisodesCallback(BaseCallback):
         super().__init__(verbose=0)
         self.max_episodes = int(max_episodes)
         self.completed_episodes = 0
+        self.stopped_due_to_limit = False
 
     def _on_step(self) -> bool:
         if self.max_episodes <= 0:
@@ -395,9 +600,157 @@ class StopAfterEpisodesCallback(BaseCallback):
                 continue
             self.completed_episodes += 1
             if self.completed_episodes >= self.max_episodes:
+                self.stopped_due_to_limit = True
                 print(f"Reached max episode limit: {self.completed_episodes}. Stopping training.")
                 return False
         return True
+
+
+class ConvergenceStopCallback(BaseCallback):
+    def __init__(
+        self,
+        *,
+        window_episodes: int,
+        min_episodes: int,
+        min_success_rate: float,
+        max_timeout_rate: float,
+        max_failure_rate: float,
+        reward_window: int,
+        reward_stability_ratio: float,
+        initial_history: list[dict[str, Any]] | None = None,
+        initial_episode_count: int = 0,
+    ) -> None:
+        super().__init__(verbose=0)
+        self.window_episodes = max(1, int(window_episodes))
+        self.min_episodes = max(self.window_episodes, int(min_episodes))
+        self.min_success_rate = float(min_success_rate)
+        self.max_timeout_rate = float(max_timeout_rate)
+        self.max_failure_rate = float(max_failure_rate)
+        self.reward_window = max(0, int(reward_window))
+        self.reward_stability_ratio = float(reward_stability_ratio)
+        self.completed_episodes = max(0, int(initial_episode_count))
+        history_size = max(
+            self.window_episodes,
+            2 * self.reward_window if self.reward_window > 0 and self.reward_stability_ratio >= 0.0 else 0,
+        )
+        self._history: deque[dict[str, Any]] = deque(maxlen=max(1, history_size))
+        for row in initial_history or []:
+            self._history.append(
+                {
+                    "episode_reward": float(row["episode_reward"]),
+                    "success": bool(row["success"]),
+                    "collision": bool(row["collision"]),
+                    "wall_collision": bool(row["wall_collision"]),
+                    "out_of_bounds": bool(row["out_of_bounds"]),
+                    "timeout": bool(row["timeout"]),
+                }
+            )
+        self.converged = False
+        self.summary: dict[str, Any] | None = None
+        self.latest_window_summary: dict[str, Any] | None = None
+
+    def _reward_stability_summary(self) -> tuple[bool, float | None]:
+        if self.reward_window <= 0 or self.reward_stability_ratio < 0.0:
+            return True, None
+
+        if len(self._history) < 2 * self.reward_window:
+            return False, None
+
+        history_rows = list(self._history)
+        previous_rewards = [row["episode_reward"] for row in history_rows[-2 * self.reward_window : -self.reward_window]]
+        recent_rewards = [row["episode_reward"] for row in history_rows[-self.reward_window :]]
+        previous_mean = float(np.mean(previous_rewards)) if previous_rewards else 0.0
+        recent_mean = float(np.mean(recent_rewards)) if recent_rewards else 0.0
+        denominator = max(abs(previous_mean), 1.0)
+        relative_delta = abs(recent_mean - previous_mean) / denominator
+        return relative_delta <= self.reward_stability_ratio, float(relative_delta)
+
+    def _window_summary(self) -> dict[str, Any] | None:
+        if self.completed_episodes < self.min_episodes or len(self._history) < self.window_episodes:
+            return None
+
+        window_rows = list(self._history)[-self.window_episodes :]
+        success_rate = float(np.mean([row["success"] for row in window_rows]))
+        timeout_rate = float(np.mean([row["timeout"] for row in window_rows]))
+        obstacle_collision_rate = float(np.mean([row["collision"] for row in window_rows]))
+        wall_collision_rate = float(np.mean([row["wall_collision"] for row in window_rows]))
+        out_of_bounds_rate = float(np.mean([row["out_of_bounds"] for row in window_rows]))
+        failure_rate = float(
+            np.mean(
+                [
+                    row["collision"] or row["wall_collision"] or row["out_of_bounds"]
+                    for row in window_rows
+                ]
+            )
+        )
+        mean_reward = float(np.mean([row["episode_reward"] for row in window_rows]))
+        reward_stable, reward_relative_delta = self._reward_stability_summary()
+
+        return {
+            "episodes_seen_total": int(self.completed_episodes),
+            "window_episodes": int(self.window_episodes),
+            "mean_reward": mean_reward,
+            "success_rate": success_rate,
+            "timeout_rate": timeout_rate,
+            "obstacle_collision_rate": obstacle_collision_rate,
+            "wall_collision_rate": wall_collision_rate,
+            "out_of_bounds_rate": out_of_bounds_rate,
+            "failure_rate": failure_rate,
+            "reward_stable": bool(reward_stable),
+            "reward_relative_delta": reward_relative_delta,
+        }
+
+    def _criteria_met(self, summary: dict[str, Any]) -> bool:
+        if summary["success_rate"] < self.min_success_rate:
+            return False
+        if summary["timeout_rate"] > self.max_timeout_rate:
+            return False
+        if summary["failure_rate"] > self.max_failure_rate:
+            return False
+        if not summary["reward_stable"]:
+            return False
+        return True
+
+    def _on_step(self) -> bool:
+        continue_training = True
+        infos = self.locals.get("infos", [])
+        for info in infos:
+            episode_info = info.get("episode")
+            if episode_info is None:
+                continue
+
+            self.completed_episodes += 1
+            self._history.append(
+                {
+                    "episode_reward": float(episode_info.get("r", 0.0)),
+                    "success": bool(info.get("success", False)),
+                    "collision": bool(info.get("collision", False)),
+                    "wall_collision": bool(info.get("wall_collision", False)),
+                    "out_of_bounds": bool(info.get("out_of_bounds", False)),
+                    "timeout": bool(info.get("timeout", False)),
+                }
+            )
+            summary = self._window_summary()
+            if summary is None:
+                continue
+
+            self.latest_window_summary = summary
+            if not self._criteria_met(summary):
+                continue
+
+            self.converged = True
+            self.summary = summary
+            print(
+                "Convergence reached: "
+                f"success={summary['success_rate']:.3f}, "
+                f"timeout={summary['timeout_rate']:.3f}, "
+                f"failure={summary['failure_rate']:.3f}, "
+                f"mean_reward={summary['mean_reward']:.3f}, "
+                f"episodes={summary['episodes_seen_total']}"
+            )
+            continue_training = False
+
+        return continue_training
 
 
 class EpisodeRewardPlotCallback(BaseCallback):
@@ -565,6 +918,7 @@ def main() -> None:
     scenario_path = resolve_scenario_path(args)
     resume_path = resolve_resume_path(args)
     bc_weights_path = resolve_bc_weights_path(args)
+    run_id = _sanitize_run_id(args.run_id or _default_run_id())
     if resume_path is not None and bc_weights_path is not None:
         raise ValueError("Use either --resume-from or --bc-weights, not both.")
     if args.timesteps is not None:
@@ -583,25 +937,59 @@ def main() -> None:
         )
     if args.render_slowdown < 0.0:
         raise ValueError("--render-slowdown must be non-negative.")
+    if args.convergence_window < 0:
+        raise ValueError("--convergence-window must be non-negative.")
+    if args.convergence_min_episodes < 0:
+        raise ValueError("--convergence-min-episodes must be non-negative.")
+
+    convergence_enabled = int(args.convergence_window) > 0
+    convergence_min_episodes = int(args.convergence_min_episodes) if int(args.convergence_min_episodes) > 0 else int(args.convergence_window)
 
     log_dir = Path(config.train.log_dir)
     if scenario_path is not None:
         log_dir = log_dir / scenario_path.stem
     checkpoint_dir = log_dir / config.train.checkpoint_dirname
-    monitor_path = log_dir / config.train.monitor_filename
     episode_metrics_path = log_dir / config.train.episode_metrics_filename
     video_dir = log_dir / config.train.video_dirname
-    reward_plot_path = log_dir / "reward_curve.png"
+    monitor_stem = Path(config.train.monitor_filename).stem
+    monitor_path = log_dir / f"{monitor_stem}_{run_id}.monitor.csv"
+    reward_plot_path = _with_run_id(log_dir / Path("reward_curve.png"), run_id)
+    run_config_path = _with_run_id(log_dir / Path("config.json"), run_id)
+    latest_summary_path = log_dir / "training_summary.json"
+    run_summary_path = _with_run_id(log_dir / Path("training_summary.json"), run_id)
     log_dir.mkdir(parents=True, exist_ok=True)
+    existing_episode_count = prepare_episode_metrics_csv(episode_metrics_path, scenario_path)
+    convergence_history_size = max(
+        int(args.convergence_window),
+        2 * int(args.convergence_reward_window)
+        if int(args.convergence_reward_window) > 0 and float(args.convergence_reward_stability_ratio) >= 0.0
+        else 0,
+    )
+    initial_convergence_history = load_recent_episode_history(episode_metrics_path, convergence_history_size)
     config_payload = config_to_dict(config)
+    config_payload["run_id"] = run_id
+    config_payload["monitor_path"] = str(monitor_path)
+    config_payload["episode_metrics_path"] = str(episode_metrics_path)
+    config_payload["reward_plot_path"] = str(reward_plot_path)
+    config_payload["existing_episode_count_at_start"] = int(existing_episode_count)
+    config_payload["convergence"] = {
+        "enabled": convergence_enabled,
+        "window_episodes": int(args.convergence_window),
+        "min_episodes": convergence_min_episodes,
+        "min_success_rate": float(args.convergence_min_success_rate),
+        "max_timeout_rate": float(args.convergence_max_timeout_rate),
+        "max_failure_rate": float(args.convergence_max_failure_rate),
+        "reward_window": int(args.convergence_reward_window),
+        "reward_stability_ratio": float(args.convergence_reward_stability_ratio),
+    }
     if scenario_path is not None:
         config_payload["selected_scenario_path"] = str(scenario_path)
     if resume_path is not None:
         config_payload["resume_from"] = str(resume_path)
     if bc_weights_path is not None:
         config_payload["bc_weights"] = str(bc_weights_path)
-    with (log_dir / "config.json").open("w", encoding="utf-8") as config_file:
-        json.dump(config_payload, config_file, indent=2, ensure_ascii=False)
+    _write_json(log_dir / "config.json", config_payload)
+    _write_json(run_config_path, config_payload)
 
     requested_device = args.device
     if requested_device.startswith("cuda") and not torch.cuda.is_available():
@@ -614,17 +1002,26 @@ def main() -> None:
         requested_device = "cuda" if torch.cuda.is_available() else "cpu"
 
     print(f"Training device: {requested_device}")
+    print(f"Run ID: {run_id}")
     if scenario_path is not None:
         print(f"Training on fixed scenario: {scenario_path}")
     if resume_path is not None:
         print(f"Resuming from model: {resume_path}")
     if bc_weights_path is not None:
         print(f"Initializing actor from BC weights: {bc_weights_path}")
+    if existing_episode_count > 0:
+        print(f"Appending to existing episode metrics with starting episode index {existing_episode_count}.")
     if config.train.save_episode_videos and config.train.video_interval_episodes > 1 and config.train.num_envs > 1:
         print(
             "Video capture is enabled with multiple environments. "
             "Episodes finish asynchronously, so frames still need to be buffered for every env. "
             "Use --num-envs 1 if you want video capture only on every saved episode and lower RAM usage."
+        )
+    if convergence_enabled and config.train.num_envs > 1:
+        print(
+            "Convergence stop is enabled with multiple environments. "
+            "Episodes still count correctly, but asynchronous completion makes the stopping point less interpretable. "
+            "Use --num-envs 1 for deterministic per-scenario convergence windows."
         )
 
     record_every_n_episodes = 1
@@ -696,12 +1093,18 @@ def main() -> None:
         save_freq=config.train.checkpoint_interval_timesteps,
         save_policy_weights=config.train.save_policy_weights,
     )
-    episode_metrics_callback = EpisodeMetricsCallback(csv_path=episode_metrics_path)
+    episode_metrics_callback = EpisodeMetricsCallback(
+        csv_path=episode_metrics_path,
+        run_id=run_id,
+        scenario_path=scenario_path,
+        initial_episode_index=existing_episode_count,
+        append=True,
+    )
     stop_after_episodes_callback = StopAfterEpisodesCallback(max_episodes=args.max_episodes)
+    convergence_callback: ConvergenceStopCallback | None = None
     callback_list: list[BaseCallback] = [
         checkpoint_callback,
         episode_metrics_callback,
-        stop_after_episodes_callback,
     ]
     if args.plot_reward:
         callback_list.append(
@@ -719,10 +1122,30 @@ def main() -> None:
                 save_every_episodes=config.train.video_interval_episodes,
                 fps=config.train.video_fps,
                 save_policy_weights=config.train.save_policy_weights,
+                initial_completed_episodes=existing_episode_count,
             )
         )
+    if convergence_enabled:
+        convergence_callback = ConvergenceStopCallback(
+            window_episodes=int(args.convergence_window),
+            min_episodes=convergence_min_episodes,
+            min_success_rate=float(args.convergence_min_success_rate),
+            max_timeout_rate=float(args.convergence_max_timeout_rate),
+            max_failure_rate=float(args.convergence_max_failure_rate),
+            reward_window=int(args.convergence_reward_window),
+            reward_stability_ratio=float(args.convergence_reward_stability_ratio),
+            initial_history=initial_convergence_history,
+            initial_episode_count=existing_episode_count,
+        )
+        callback_list.append(convergence_callback)
+    callback_list.append(stop_after_episodes_callback)
     callback = CallbackList(callback_list)
 
+    latest_model_path: Path | None = None
+    latest_weights_path: Path | None = None
+    archived_model_path: Path | None = None
+    archived_weights_path: Path | None = None
+    stop_reason = "timesteps_reached"
     try:
         model.learn(
             total_timesteps=config.train.total_timesteps,
@@ -730,30 +1153,76 @@ def main() -> None:
             reset_num_timesteps=resume_path is None,
         )
     except KeyboardInterrupt:
-        interrupted_model_path, interrupted_weights_path = save_training_artifacts(
+        latest_model_path, latest_weights_path = save_training_artifacts(
             model=model,
             save_dir=log_dir,
             model_name=config.train.model_name,
             save_policy_weights=config.train.save_policy_weights,
             suffix="_interrupted",
         )
+        archived_model_path, archived_weights_path = save_training_artifacts(
+            model=model,
+            save_dir=log_dir,
+            model_name=config.train.model_name,
+            save_policy_weights=config.train.save_policy_weights,
+            suffix=f"_interrupted_{run_id}",
+        )
         weights_message = (
-            f", interrupted policy weights to {interrupted_weights_path}"
-            if interrupted_weights_path is not None
+            f", interrupted policy weights to {latest_weights_path}"
+            if latest_weights_path is not None
             else ""
         )
-        print(f"Training interrupted. Saved interrupted model to {interrupted_model_path}{weights_message}")
+        stop_reason = "keyboard_interrupt"
+        print(f"Training interrupted. Saved interrupted model to {latest_model_path}{weights_message}")
     else:
-        final_model_path, final_weights_path = save_training_artifacts(
+        latest_model_path, latest_weights_path = save_training_artifacts(
             model=model,
             save_dir=log_dir,
             model_name=config.train.model_name,
             save_policy_weights=config.train.save_policy_weights,
         )
-        weights_message = f", policy weights to {final_weights_path}" if final_weights_path is not None else ""
-        print(f"Saved model to {final_model_path}{weights_message}")
+        archived_model_path, archived_weights_path = save_training_artifacts(
+            model=model,
+            save_dir=log_dir,
+            model_name=config.train.model_name,
+            save_policy_weights=config.train.save_policy_weights,
+            suffix=f"_{run_id}",
+        )
+        weights_message = f", policy weights to {latest_weights_path}" if latest_weights_path is not None else ""
+        if convergence_callback is not None and convergence_callback.converged:
+            stop_reason = "convergence"
+        elif stop_after_episodes_callback.stopped_due_to_limit:
+            stop_reason = "max_episodes"
+        print(f"Saved model to {latest_model_path}{weights_message}")
     finally:
         env.close()
+
+    training_summary = {
+        "run_id": run_id,
+        "scenario_path": None if scenario_path is None else str(scenario_path),
+        "resume_from": None if resume_path is None else str(resume_path),
+        "bc_weights": None if bc_weights_path is None else str(bc_weights_path),
+        "device": requested_device,
+        "log_dir": str(log_dir),
+        "checkpoint_dir": str(checkpoint_dir),
+        "video_dir": str(video_dir),
+        "monitor_path": str(monitor_path),
+        "episode_metrics_path": str(episode_metrics_path),
+        "existing_episode_count_at_start": int(existing_episode_count),
+        "episodes_completed_this_run": int(episode_metrics_callback.completed_episodes_this_run),
+        "episodes_completed_total": int(existing_episode_count + episode_metrics_callback.completed_episodes_this_run),
+        "num_timesteps": int(model.num_timesteps),
+        "stop_reason": stop_reason,
+        "converged": bool(convergence_callback.converged) if convergence_callback is not None else False,
+        "convergence_summary": None if convergence_callback is None else convergence_callback.summary,
+        "latest_window_summary": None if convergence_callback is None else convergence_callback.latest_window_summary,
+        "latest_model_path": None if latest_model_path is None else str(latest_model_path),
+        "latest_policy_weights_path": None if latest_weights_path is None else str(latest_weights_path),
+        "archived_model_path": None if archived_model_path is None else str(archived_model_path),
+        "archived_policy_weights_path": None if archived_weights_path is None else str(archived_weights_path),
+    }
+    _write_json(latest_summary_path, training_summary)
+    _write_json(run_summary_path, training_summary)
 
 
 if __name__ == "__main__":

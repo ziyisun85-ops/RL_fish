@@ -13,6 +13,10 @@ runs/**/checkpoints/
 runs/**/*.mp4
 runs/**/*.log
 runs/**/*.err.log
-runs/**/monitor.csv
+runs/**/monitor*.csv
 runs/**/episode_metrics.csv
-runs/**/reward_curve.png
+runs/**/reward_curve*.png
+runs/**/training_summary*.json
+runs/**/config_*.json
+runs/**/curriculum_*.json
+runs/**/curriculum_*.csv
