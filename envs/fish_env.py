@@ -63,6 +63,7 @@ class FishPathAvoidEnv(gym.Env):
         viewer_key_callback: Callable[[int], None] | None = None,
         scenario_path: str | Path | None = None,
         scenario_cycle_paths: Sequence[str | Path] | None = None,
+        scenario_cycle_sample_size: int = 0,
     ) -> None:
         super().__init__()
         if render_mode not in (None, "human", "rgb_array"):
@@ -88,6 +89,7 @@ class FishPathAvoidEnv(gym.Env):
             if scenario_cycle_paths is None
             else tuple(Path(path).resolve() for path in scenario_cycle_paths)
         )
+        self.scenario_cycle_sample_size = max(0, int(scenario_cycle_sample_size))
         self.active_scenario_path = None if self.scenario_path is None else self.scenario_path
         self._apply_dataset_env_overrides(
             None if self.scenario_path is None else load_dataset_env_config_for_scenario(self.scenario_path),
@@ -97,6 +99,8 @@ class FishPathAvoidEnv(gym.Env):
         self._scenario_cycle_index = 0
         self._scenario_cycle_entries: list[tuple[Path, FixedScenario]] = []
         self._scenario_cycle_manifest_ref: dict[str, Any] | None = None
+        self._scenario_cycle_batch_indices: list[int] = []
+        self._scenario_cycle_batch_pos = 0
         if self.scenario_cycle_paths is not None:
             self._prepare_scenario_cycle(self.scenario_cycle_paths)
 
@@ -375,11 +379,33 @@ class FishPathAvoidEnv(gym.Env):
         self.fixed_scenario = first_scenario
         self.active_scenario_id = first_scenario.scenario_id
 
+    def _draw_scenario_cycle_batch(self) -> None:
+        entry_count = len(self._scenario_cycle_entries)
+        if entry_count <= 0:
+            self._scenario_cycle_batch_indices = []
+            self._scenario_cycle_batch_pos = 0
+            return
+
+        sample_size = self.scenario_cycle_sample_size
+        if sample_size <= 0 or sample_size >= entry_count:
+            self._scenario_cycle_batch_indices = list(range(entry_count))
+        else:
+            sampled_indices = self.np_random.choice(entry_count, size=sample_size, replace=False)
+            self._scenario_cycle_batch_indices = [int(index) for index in np.asarray(sampled_indices, dtype=np.int32)]
+        self._scenario_cycle_batch_pos = 0
+
     def _advance_scenario_cycle(self) -> None:
         if not self._scenario_cycle_entries:
             return
-        path, scenario = self._scenario_cycle_entries[self._scenario_cycle_index]
-        self._scenario_cycle_index = (self._scenario_cycle_index + 1) % len(self._scenario_cycle_entries)
+        if self.scenario_cycle_sample_size > 0:
+            if self._scenario_cycle_batch_pos >= len(self._scenario_cycle_batch_indices):
+                self._draw_scenario_cycle_batch()
+            entry_index = self._scenario_cycle_batch_indices[self._scenario_cycle_batch_pos]
+            self._scenario_cycle_batch_pos += 1
+        else:
+            entry_index = self._scenario_cycle_index
+            self._scenario_cycle_index = (self._scenario_cycle_index + 1) % len(self._scenario_cycle_entries)
+        path, scenario = self._scenario_cycle_entries[int(entry_index)]
         self.scenario_path = path
         self.active_scenario_path = path
         self.fixed_scenario = scenario

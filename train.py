@@ -58,6 +58,12 @@ def parse_args() -> argparse.Namespace:
         default=None,
         help="Resume training from a previously saved .zip PPO model.",
     )
+    parser.add_argument(
+        "--resume-policy-weights",
+        type=str,
+        default=None,
+        help="Resume training from a saved PPO policy weights snapshot (.pth/.pt).",
+    )
     parser.add_argument("--xml-path", type=str, default=None, help="Override MuJoCo XML scene path.")
     parser.add_argument(
         "--render",
@@ -168,6 +174,12 @@ def parse_args() -> argparse.Namespace:
         help="Optional 1-based end offset applied to the selected scenario cycle.",
     )
     parser.add_argument(
+        "--scenario-cycle-sample-size",
+        type=int,
+        default=0,
+        help="When positive, draw this many unique scenarios at random for each scenario-cycle batch.",
+    )
+    parser.add_argument(
         "--rollout-episodes-per-update",
         type=int,
         default=0,
@@ -217,6 +229,18 @@ def parse_args() -> argparse.Namespace:
         type=str,
         default=None,
         help="Optional run identifier used for per-run monitor/config/summary files. Defaults to a timestamp.",
+    )
+    parser.add_argument(
+        "--log-dir",
+        type=str,
+        default=None,
+        help="Optional override for the training log directory.",
+    )
+    parser.add_argument(
+        "--model-name",
+        type=str,
+        default=None,
+        help="Optional override for the saved PPO checkpoint stem.",
     )
     parser.add_argument(
         "--convergence-window",
@@ -356,6 +380,18 @@ def resolve_resume_path(args: argparse.Namespace) -> Path | None:
     return resume_path
 
 
+def resolve_resume_policy_weights_path(args: argparse.Namespace) -> Path | None:
+    if args.resume_policy_weights is None:
+        return None
+
+    weights_path = Path(args.resume_policy_weights).resolve()
+    if not weights_path.exists():
+        raise FileNotFoundError(f"Resume policy weights not found: {weights_path}")
+    if weights_path.suffix.lower() not in {".pth", ".pt"}:
+        raise ValueError(f"--resume-policy-weights must point to a .pth or .pt file, got: {weights_path}")
+    return weights_path
+
+
 def resolve_bc_weights_path(args: argparse.Namespace) -> Path | None:
     if args.bc_weights is None:
         return None
@@ -388,6 +424,15 @@ def _load_resume_policy_snapshot(
     return policy_state, num_timesteps
 
 
+def _load_resume_policy_weights_snapshot(weights_path: Path) -> tuple[dict[str, torch.Tensor], int]:
+    payload = torch.load(weights_path, map_location="cpu")
+    policy_state = payload.get("policy_state_dict")
+    if not isinstance(policy_state, dict):
+        raise KeyError(f"Policy weights checkpoint does not contain 'policy_state_dict': {weights_path}")
+    num_timesteps = int(payload.get("num_timesteps", 0))
+    return policy_state, num_timesteps
+
+
 def _estimate_rollout_buffer_bytes(max_steps: int, env_config) -> int:
     image_height = int(env_config.camera.height)
     image_width = int(env_config.camera.width)
@@ -412,6 +457,15 @@ def _detect_latest_cycle_update_index(checkpoint_dir: Path, model_name: str) -> 
             continue
         latest_index = max(latest_index, int(match.group(1)))
     return int(latest_index)
+
+
+def _extract_cycle_update_index(path: Path | None) -> int:
+    if path is None:
+        return 0
+    match = re.search(r"_update_(\d{6})(?:_policy)?\.(?:zip|pth|pt)$", path.name, re.IGNORECASE)
+    if match is None:
+        return 0
+    return int(match.group(1))
 
 
 def _unwrap_vec_env_envs(vec_env) -> list[FishPathAvoidEnv]:
@@ -1105,13 +1159,18 @@ class EpisodeRewardPlotCallback(BaseCallback):
 def main() -> None:
     args = parse_args()
     config = make_config()
+    if args.log_dir is not None:
+        config.train.log_dir = str(Path(args.log_dir).resolve())
+    if args.model_name is not None:
+        config.train.model_name = str(args.model_name)
     scenario_path = resolve_scenario_path(args)
     scenario_cycle_paths = resolve_scenario_cycle_paths(args)
     resume_path = resolve_resume_path(args)
+    resume_policy_weights_path = resolve_resume_policy_weights_path(args)
     bc_weights_path = resolve_bc_weights_path(args)
     run_id = _sanitize_run_id(args.run_id or _default_run_id())
-    if resume_path is not None and bc_weights_path is not None:
-        raise ValueError("Use either --resume-from or --bc-weights, not both.")
+    if sum(path is not None for path in (resume_path, resume_policy_weights_path, bc_weights_path)) > 1:
+        raise ValueError("Use only one of --resume-from, --resume-policy-weights, or --bc-weights.")
     if scenario_path is not None and scenario_cycle_paths:
         raise ValueError("Use either single-scenario mode or scenario-cycle mode, not both.")
     if args.timesteps is not None:
@@ -1138,16 +1197,29 @@ def main() -> None:
         raise ValueError("--rollout-episodes-per-update must be non-negative.")
     if args.rollout_step_budget < 0:
         raise ValueError("--rollout-step-budget must be non-negative.")
+    if args.scenario_cycle_sample_size < 0:
+        raise ValueError("--scenario-cycle-sample-size must be non-negative.")
     if args.use_lora and args.lora_rank <= 0:
         raise ValueError("--lora-rank must be positive when --use-lora is enabled.")
 
     convergence_enabled = int(args.convergence_window) > 0
     convergence_min_episodes = int(args.convergence_min_episodes) if int(args.convergence_min_episodes) > 0 else int(args.convergence_window)
+    scenario_cycle_sample_size = int(args.scenario_cycle_sample_size)
+    if scenario_cycle_sample_size > 0 and not scenario_cycle_paths:
+        raise ValueError("--scenario-cycle-sample-size requires scenario-cycle mode.")
+    if scenario_cycle_paths and scenario_cycle_sample_size > len(scenario_cycle_paths):
+        raise ValueError(
+            "--scenario-cycle-sample-size cannot exceed the number of selected scenario-cycle scenes."
+        )
     rollout_episodes_per_update = int(args.rollout_episodes_per_update)
     if scenario_cycle_paths and rollout_episodes_per_update <= 0:
-        rollout_episodes_per_update = len(scenario_cycle_paths)
+        rollout_episodes_per_update = scenario_cycle_sample_size if scenario_cycle_sample_size > 0 else len(scenario_cycle_paths)
     if rollout_episodes_per_update > 0 and not scenario_cycle_paths:
         raise ValueError("--rollout-episodes-per-update requires scenario-cycle mode.")
+    if scenario_cycle_sample_size > 0 and rollout_episodes_per_update != scenario_cycle_sample_size:
+        raise ValueError(
+            "--scenario-cycle-sample-size must equal --rollout-episodes-per-update so each sampled scene runs exactly one episode per PPO update."
+        )
     episode_cycle_enabled = rollout_episodes_per_update > 0
     if scenario_cycle_paths and config.train.num_envs != 1:
         raise ValueError("Scenario-cycle mode currently requires --num-envs 1.")
@@ -1183,6 +1255,12 @@ def main() -> None:
     run_summary_path = _with_run_id(log_dir / Path("training_summary.json"), run_id)
     log_dir.mkdir(parents=True, exist_ok=True)
     existing_cycle_update_index = _detect_latest_cycle_update_index(checkpoint_dir, config.train.model_name)
+    resume_source_update_index = max(
+        _extract_cycle_update_index(resume_path),
+        _extract_cycle_update_index(resume_policy_weights_path),
+    )
+    if episode_cycle_enabled:
+        existing_cycle_update_index = max(existing_cycle_update_index, resume_source_update_index)
     existing_episode_count = prepare_episode_metrics_csv(episode_metrics_path, scenario_path)
     convergence_history_size = max(
         int(args.convergence_window),
@@ -1210,6 +1288,7 @@ def main() -> None:
     config_payload["rollout_schedule"] = {
         "episode_cycle_enabled": episode_cycle_enabled,
         "episodes_per_update": int(rollout_episodes_per_update),
+        "scenario_cycle_sample_size": int(scenario_cycle_sample_size),
         "step_budget": int(rollout_step_budget),
         "strict_step_budget": bool(args.strict_rollout_step_budget),
     }
@@ -1229,6 +1308,8 @@ def main() -> None:
         config_payload["selected_scenario_cycle_paths"] = [str(path) for path in scenario_cycle_paths]
     if resume_path is not None:
         config_payload["resume_from"] = str(resume_path)
+    if resume_policy_weights_path is not None:
+        config_payload["resume_policy_weights"] = str(resume_policy_weights_path)
     if bc_weights_path is not None:
         config_payload["bc_weights"] = str(bc_weights_path)
     _write_json(log_dir / "config.json", config_payload)
@@ -1249,14 +1330,19 @@ def main() -> None:
     if scenario_path is not None:
         print(f"Training on fixed scenario: {scenario_path}")
     if scenario_cycle_paths:
+        sampling_message = ""
+        if scenario_cycle_sample_size > 0:
+            sampling_message = f", random {scenario_cycle_sample_size}-scene batch/update"
         print(
             "Training on scenario cycle: "
-            f"{len(scenario_cycle_paths)} scenes, "
+            f"{len(scenario_cycle_paths)} scenes{sampling_message}, "
             f"{rollout_episodes_per_update} episodes/update, "
             f"step budget {rollout_step_budget}"
         )
     if resume_path is not None:
         print(f"Resuming from model: {resume_path}")
+    if resume_policy_weights_path is not None:
+        print(f"Resuming from policy weights: {resume_policy_weights_path}")
     if bc_weights_path is not None:
         print(f"Initializing actor from BC weights: {bc_weights_path}")
     if args.use_lora:
@@ -1303,6 +1389,7 @@ def main() -> None:
                 record_every_n_episodes=record_every_n_episodes,
                 scenario_path=scenario_path,
                 scenario_cycle_paths=scenario_cycle_paths if scenario_cycle_paths else None,
+                scenario_cycle_sample_size=scenario_cycle_sample_size,
             )
             env.reset(seed=config.train.seed + rank)
             return env
@@ -1364,15 +1451,21 @@ def main() -> None:
             model_kwargs["post_update_initial_iteration"] = int(existing_cycle_update_index)
         model = algorithm_class(**model_kwargs)
 
-        if resume_path is not None:
-            resume_policy_state, resume_num_timesteps = _load_resume_policy_snapshot(
-                resume_path,
-                device=requested_device,
-                algorithm_class=algorithm_class,
-            )
+        if resume_path is not None or resume_policy_weights_path is not None:
+            if resume_path is not None:
+                resume_policy_state, resume_num_timesteps = _load_resume_policy_snapshot(
+                    resume_path,
+                    device=requested_device,
+                    algorithm_class=algorithm_class,
+                )
+            else:
+                resume_policy_state, resume_num_timesteps = _load_resume_policy_weights_snapshot(
+                    resume_policy_weights_path,
+                )
             loaded_keys, skipped_keys = load_matching_policy_state_dict(model.policy, resume_policy_state)
             if not loaded_keys:
-                raise RuntimeError(f"No policy tensors were loaded from resume checkpoint: {resume_path}")
+                resume_source = resume_path if resume_path is not None else resume_policy_weights_path
+                raise RuntimeError(f"No policy tensors were loaded from resume checkpoint: {resume_source}")
             model.num_timesteps = int(resume_num_timesteps)
             print(f"Initialized {len(loaded_keys)} policy tensors from resume checkpoint.")
             if skipped_keys:
@@ -1450,7 +1543,7 @@ def main() -> None:
         model.learn(
             total_timesteps=config.train.total_timesteps,
             callback=callback,
-            reset_num_timesteps=resume_path is None,
+            reset_num_timesteps=resume_path is None and resume_policy_weights_path is None,
         )
     except KeyboardInterrupt:
         latest_model_path, latest_weights_path = save_training_artifacts(
@@ -1502,6 +1595,7 @@ def main() -> None:
         "scenario_path": None if scenario_path is None else str(scenario_path),
         "scenario_cycle_paths": None if not scenario_cycle_paths else [str(path) for path in scenario_cycle_paths],
         "resume_from": None if resume_path is None else str(resume_path),
+        "resume_policy_weights": None if resume_policy_weights_path is None else str(resume_policy_weights_path),
         "bc_weights": None if bc_weights_path is None else str(bc_weights_path),
         "device": requested_device,
         "log_dir": str(log_dir),
@@ -1517,6 +1611,7 @@ def main() -> None:
         "stop_reason": stop_reason,
         "lora_enabled": bool(args.use_lora),
         "rollout_episodes_per_update": int(rollout_episodes_per_update),
+        "scenario_cycle_sample_size": int(scenario_cycle_sample_size),
         "rollout_step_budget": int(rollout_step_budget),
         "converged": bool(convergence_callback.converged) if convergence_callback is not None else False,
         "convergence_summary": None if convergence_callback is None else convergence_callback.summary,
