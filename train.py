@@ -4,6 +4,7 @@ import argparse
 import csv
 import json
 import os
+import re
 from collections import deque
 from datetime import datetime
 from pathlib import Path
@@ -395,6 +396,22 @@ def _estimate_rollout_buffer_bytes(max_steps: int, env_config) -> int:
     scalar_bytes = int(max_steps) * 6 * 4
     action_bytes = int(max_steps) * 4
     return image_bytes + imu_bytes + scalar_bytes + action_bytes
+
+
+def _detect_latest_cycle_update_index(checkpoint_dir: Path, model_name: str) -> int:
+    if not checkpoint_dir.exists():
+        return 0
+
+    pattern = re.compile(rf"^{re.escape(model_name)}_update_(\d{{6}})\.zip$", re.IGNORECASE)
+    latest_index = 0
+    for path in checkpoint_dir.iterdir():
+        if not path.is_file():
+            continue
+        match = pattern.match(path.name)
+        if match is None:
+            continue
+        latest_index = max(latest_index, int(match.group(1)))
+    return int(latest_index)
 
 
 def _unwrap_vec_env_envs(vec_env) -> list[FishPathAvoidEnv]:
@@ -1165,6 +1182,7 @@ def main() -> None:
     latest_summary_path = log_dir / "training_summary.json"
     run_summary_path = _with_run_id(log_dir / Path("training_summary.json"), run_id)
     log_dir.mkdir(parents=True, exist_ok=True)
+    existing_cycle_update_index = _detect_latest_cycle_update_index(checkpoint_dir, config.train.model_name)
     existing_episode_count = prepare_episode_metrics_csv(episode_metrics_path, scenario_path)
     convergence_history_size = max(
         int(args.convergence_window),
@@ -1179,6 +1197,7 @@ def main() -> None:
     config_payload["episode_metrics_path"] = str(episode_metrics_path)
     config_payload["reward_plot_path"] = str(reward_plot_path)
     config_payload["existing_episode_count_at_start"] = int(existing_episode_count)
+    config_payload["existing_cycle_update_index_at_start"] = int(existing_cycle_update_index)
     config_payload["lora"] = {
         "enabled": bool(args.use_lora),
         "rank": int(args.lora_rank),
@@ -1247,6 +1266,8 @@ def main() -> None:
         )
     if existing_episode_count > 0:
         print(f"Appending to existing episode metrics with starting episode index {existing_episode_count}.")
+    if episode_cycle_enabled and existing_cycle_update_index > 0:
+        print(f"Continuing cycle checkpoint numbering from update index {existing_cycle_update_index}.")
     if config.train.save_episode_videos and config.train.video_interval_episodes > 1 and config.train.num_envs > 1:
         print(
             "Video capture is enabled with multiple environments. "
@@ -1340,6 +1361,7 @@ def main() -> None:
             model_kwargs["post_update_model_name"] = config.train.model_name
             model_kwargs["post_update_save_policy_weights"] = bool(config.train.save_policy_weights)
             model_kwargs["post_update_save_every_iterations"] = 1
+            model_kwargs["post_update_initial_iteration"] = int(existing_cycle_update_index)
         model = algorithm_class(**model_kwargs)
 
         if resume_path is not None:
@@ -1488,6 +1510,7 @@ def main() -> None:
         "monitor_path": str(monitor_path),
         "episode_metrics_path": str(episode_metrics_path),
         "existing_episode_count_at_start": int(existing_episode_count),
+        "existing_cycle_update_index_at_start": int(existing_cycle_update_index),
         "episodes_completed_this_run": int(episode_metrics_callback.completed_episodes_this_run),
         "episodes_completed_total": int(existing_episode_count + episode_metrics_callback.completed_episodes_this_run),
         "num_timesteps": int(model.num_timesteps),

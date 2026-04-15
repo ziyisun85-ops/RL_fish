@@ -88,6 +88,7 @@ class EpisodeCyclePPO(PPO):
         post_update_model_name: str = "ppo_fish_baseline",
         post_update_save_policy_weights: bool = True,
         post_update_save_every_iterations: int = 0,
+        post_update_initial_iteration: int = 0,
         **kwargs: Any,
     ) -> None:
         if kwargs.get("rollout_buffer_class") is None:
@@ -99,6 +100,7 @@ class EpisodeCyclePPO(PPO):
         self.post_update_model_name = str(post_update_model_name)
         self.post_update_save_policy_weights = bool(post_update_save_policy_weights)
         self.post_update_save_every_iterations = max(0, int(post_update_save_every_iterations))
+        self.post_update_initial_iteration = max(0, int(post_update_initial_iteration))
 
     def collect_rollouts(
         self,
@@ -197,7 +199,8 @@ class EpisodeCyclePPO(PPO):
             return
         if int(iteration) % int(self.post_update_save_every_iterations) != 0:
             return
-        suffix = f"_update_{int(iteration):06d}"
+        checkpoint_index = self.post_update_initial_iteration + int(iteration)
+        suffix = f"_update_{checkpoint_index:06d}"
         model_path, weights_path = _save_training_artifacts(
             model=self,
             save_dir=self.post_update_save_dir,
