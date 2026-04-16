@@ -12,7 +12,8 @@ from typing import Any
 
 import numpy as np
 import torch
-from stable_baselines3 import PPO
+from stable_baselines3 import PPO, SAC
+from stable_baselines3.common.base_class import BaseAlgorithm
 from stable_baselines3.common.callbacks import BaseCallback, CallbackList
 from stable_baselines3.common.vec_env import DummyVecEnv, VecMonitor, VecTransposeImage
 
@@ -20,7 +21,11 @@ from algorithms import EpisodeCyclePPO
 from configs.default_config import PROJECT_ROOT, config_to_dict, make_config
 from envs import FishPathAvoidEnv
 from utils.lora_policy import DEFAULT_LORA_TARGET_MODULES, LoraMultiInputPolicy
-from utils.policy_utils import load_actor_state_dict, load_matching_policy_state_dict
+from utils.policy_utils import (
+    load_actor_state_dict,
+    load_bc_actor_state_dict_into_sac_policy,
+    load_matching_policy_state_dict,
+)
 
 
 EPISODE_METRICS_FIELDNAMES = [
@@ -49,20 +54,27 @@ EPISODE_METRICS_FIELDNAMES = [
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Train PPO for fish path following with local obstacle avoidance.")
+    parser = argparse.ArgumentParser(description="Train PPO or SAC for fish path following with local obstacle avoidance.")
     parser.add_argument("--timesteps", type=int, default=None, help="Override total training timesteps.")
     parser.add_argument("--num-envs", type=int, default=None, help="Override number of parallel environments.")
+    parser.add_argument(
+        "--algo",
+        type=str,
+        choices=("ppo", "sac"),
+        default=None,
+        help="RL algorithm. Defaults to the value in configs/default_config.py.",
+    )
     parser.add_argument(
         "--resume-from",
         type=str,
         default=None,
-        help="Resume training from a previously saved .zip PPO model.",
+        help="Resume training from a previously saved .zip RL model.",
     )
     parser.add_argument(
         "--resume-policy-weights",
         type=str,
         default=None,
-        help="Resume training from a saved PPO policy weights snapshot (.pth/.pt).",
+        help="Resume training from a saved policy weights snapshot (.pth/.pt).",
     )
     parser.add_argument("--xml-path", type=str, default=None, help="Override MuJoCo XML scene path.")
     parser.add_argument(
@@ -141,7 +153,7 @@ def parse_args() -> argparse.Namespace:
         "--bc-weights",
         type=str,
         default=None,
-        help="Initialize the PPO actor from a BC actor checkpoint saved by train_bc.py.",
+        help="Initialize the actor from a BC actor checkpoint saved by train_bc.py.",
     )
     parser.add_argument(
         "--scenario-cycle-dir",
@@ -183,19 +195,79 @@ def parse_args() -> argparse.Namespace:
         "--rollout-episodes-per-update",
         type=int,
         default=0,
-        help="When positive, collect this many completed episodes before each PPO update. Requires scenario-cycle mode.",
+        help="Scenario-cycle cadence. PPO collects this many episodes before each update; SAC saves one cycle checkpoint every this many completed episodes.",
     )
     parser.add_argument(
         "--rollout-step-budget",
         type=int,
         default=0,
-        help="Maximum rollout buffer steps reserved for one PPO update in episode-cycle mode. Defaults to max_episode_steps * rollout_episodes_per_update.",
+        help="Maximum rollout buffer steps reserved for one PPO cycle update in episode-cycle mode. Defaults to max_episode_steps * rollout_episodes_per_update.",
     )
     parser.add_argument(
         "--strict-rollout-step-budget",
         action=argparse.BooleanOptionalAction,
         default=True,
         help="Stop with an error if episode-cycle rollout hits the step budget before collecting the requested number of episodes.",
+    )
+    parser.add_argument(
+        "--align-rollout-updates-to-episode-count",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+        help="Align the first post-resume cycle checkpoint to the next multiple of --rollout-episodes-per-update based on the existing episode_metrics.csv count.",
+    )
+    parser.add_argument(
+        "--sac-buffer-size",
+        type=int,
+        default=None,
+        help="Override SAC replay buffer size.",
+    )
+    parser.add_argument(
+        "--sac-learning-starts",
+        type=int,
+        default=None,
+        help="Override SAC warmup steps before gradient updates start.",
+    )
+    parser.add_argument(
+        "--sac-train-freq-steps",
+        type=int,
+        default=None,
+        help="Override SAC train frequency in environment steps.",
+    )
+    parser.add_argument(
+        "--sac-gradient-steps",
+        type=int,
+        default=None,
+        help="Override SAC gradient steps per training trigger.",
+    )
+    parser.add_argument(
+        "--sac-tau",
+        type=float,
+        default=None,
+        help="Override SAC target network smoothing coefficient.",
+    )
+    parser.add_argument(
+        "--sac-ent-coef",
+        type=str,
+        default=None,
+        help="Override SAC entropy coefficient, for example auto or 0.05.",
+    )
+    parser.add_argument(
+        "--sac-target-update-interval",
+        type=int,
+        default=None,
+        help="Override SAC target network update interval.",
+    )
+    parser.add_argument(
+        "--sac-target-entropy",
+        type=str,
+        default=None,
+        help="Override SAC target entropy, for example auto or -1.",
+    )
+    parser.add_argument(
+        "--sac-optimize-memory-usage",
+        action=argparse.BooleanOptionalAction,
+        default=None,
+        help="Enable or disable Stable-Baselines3 replay buffer memory optimization for SAC.",
     )
     parser.add_argument(
         "--use-lora",
@@ -240,7 +312,7 @@ def parse_args() -> argparse.Namespace:
         "--model-name",
         type=str,
         default=None,
-        help="Optional override for the saved PPO checkpoint stem.",
+        help="Optional override for the saved checkpoint stem.",
     )
     parser.add_argument(
         "--convergence-window",
@@ -376,7 +448,7 @@ def resolve_resume_path(args: argparse.Namespace) -> Path | None:
     if not resume_path.exists():
         raise FileNotFoundError(f"Resume model not found: {resume_path}")
     if resume_path.suffix.lower() != ".zip":
-        raise ValueError(f"--resume-from must point to a .zip PPO model, got: {resume_path}")
+        raise ValueError(f"--resume-from must point to a .zip RL model, got: {resume_path}")
     return resume_path
 
 
@@ -404,7 +476,7 @@ def resolve_bc_weights_path(args: argparse.Namespace) -> Path | None:
     return weights_path
 
 
-def _cpu_policy_state_dict(model: PPO) -> dict[str, torch.Tensor]:
+def _cpu_policy_state_dict(model: BaseAlgorithm) -> dict[str, torch.Tensor]:
     policy_state = model.policy.state_dict()
     return {key: value.detach().cpu() for key, value in policy_state.items()}
 
@@ -413,15 +485,22 @@ def _load_resume_policy_snapshot(
     resume_path: Path,
     *,
     device: str,
-    algorithm_class: type[PPO],
+    load_candidates: list[type[BaseAlgorithm]],
 ) -> tuple[dict[str, torch.Tensor], int]:
-    try:
-        loaded_model = algorithm_class.load(str(resume_path), device=device)
-    except Exception:
-        loaded_model = PPO.load(str(resume_path), device=device)
-    policy_state = _cpu_policy_state_dict(loaded_model)
-    num_timesteps = int(loaded_model.num_timesteps)
-    return policy_state, num_timesteps
+    load_errors: list[str] = []
+    for algorithm_class in load_candidates:
+        try:
+            loaded_model = algorithm_class.load(str(resume_path), device=device)
+        except Exception as exc:
+            load_errors.append(f"{algorithm_class.__name__}: {exc}")
+            continue
+        policy_state = _cpu_policy_state_dict(loaded_model)
+        num_timesteps = int(loaded_model.num_timesteps)
+        return policy_state, num_timesteps
+    raise RuntimeError(
+        "Failed to load resume checkpoint with the supported algorithms: "
+        + "; ".join(load_errors)
+    )
 
 
 def _load_resume_policy_weights_snapshot(weights_path: Path) -> tuple[dict[str, torch.Tensor], int]:
@@ -513,6 +592,17 @@ def _parse_csv_int(value: Any, default: int = 0) -> int:
         return int(default)
 
 
+def _parse_auto_or_float(value: Any) -> str | float:
+    if isinstance(value, str):
+        stripped = value.strip()
+        if not stripped:
+            raise ValueError("Expected a float or the string 'auto'.")
+        if stripped.lower().startswith("auto"):
+            return stripped
+        return float(stripped)
+    return float(value)
+
+
 def _write_json(path: Path, payload: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", encoding="utf-8") as file:
@@ -597,17 +687,21 @@ def load_recent_episode_history(csv_path: Path, max_rows: int) -> list[dict[str,
 
 
 def save_training_artifacts(
-    model: PPO,
+    model: BaseAlgorithm,
     save_dir: Path,
     model_name: str,
     save_policy_weights: bool,
     *,
     suffix: str = "",
+    save_replay_buffer: bool = False,
 ) -> tuple[Path, Path | None]:
     save_dir.mkdir(parents=True, exist_ok=True)
     stem = f"{model_name}{suffix}"
     model_path = save_dir / f"{stem}.zip"
     model.save(str(model_path))
+    if save_replay_buffer and hasattr(model, "save_replay_buffer"):
+        replay_buffer_path = save_dir / f"{stem}_replay_buffer.pkl"
+        model.save_replay_buffer(str(replay_buffer_path))
 
     weights_path: Path | None = None
     if save_policy_weights:
@@ -623,6 +717,16 @@ def save_training_artifacts(
     return model_path, weights_path
 
 
+def load_replay_buffer_if_available(model: BaseAlgorithm, model_path: Path) -> Path | None:
+    if not hasattr(model, "load_replay_buffer"):
+        return None
+    replay_buffer_path = model_path.with_name(f"{model_path.stem}_replay_buffer.pkl")
+    if not replay_buffer_path.exists():
+        return None
+    model.load_replay_buffer(str(replay_buffer_path))
+    return replay_buffer_path
+
+
 class WeightCheckpointCallback(BaseCallback):
     def __init__(
         self,
@@ -630,12 +734,14 @@ class WeightCheckpointCallback(BaseCallback):
         model_name: str,
         save_freq: int,
         save_policy_weights: bool,
+        save_replay_buffer: bool = False,
     ) -> None:
         super().__init__(verbose=0)
         self.save_dir = save_dir
         self.model_name = model_name
         self.save_freq = max(0, int(save_freq))
         self.save_policy_weights = save_policy_weights
+        self.save_replay_buffer = bool(save_replay_buffer)
         self._last_save_timestep = 0
 
     def _on_step(self) -> bool:
@@ -652,10 +758,74 @@ class WeightCheckpointCallback(BaseCallback):
             model_name=self.model_name,
             save_policy_weights=self.save_policy_weights,
             suffix=step_suffix,
+            save_replay_buffer=self.save_replay_buffer,
         )
         weights_message = f", policy weights to {weights_path}" if weights_path is not None else ""
         print(f"Checkpoint saved to {model_path}{weights_message}")
         self._last_save_timestep = int(self.num_timesteps)
+        return True
+
+
+class CycleCheckpointCallback(BaseCallback):
+    def __init__(
+        self,
+        *,
+        save_dir: Path,
+        model_name: str,
+        save_policy_weights: bool,
+        save_replay_buffer: bool = False,
+        episodes_per_cycle: int,
+        initial_episode_count: int = 0,
+        initial_cycle_index: int = 0,
+        align_to_episode_count: bool = False,
+    ) -> None:
+        super().__init__(verbose=0)
+        self.save_dir = save_dir
+        self.model_name = model_name
+        self.save_policy_weights = bool(save_policy_weights)
+        self.save_replay_buffer = bool(save_replay_buffer)
+        self.episodes_per_cycle = max(0, int(episodes_per_cycle))
+        self.completed_episodes = max(0, int(initial_episode_count))
+        self.next_cycle_index = max(0, int(initial_cycle_index)) + 1
+        self.align_to_episode_count = bool(align_to_episode_count)
+        self._next_checkpoint_episode = self._compute_initial_checkpoint_episode()
+
+    def _compute_initial_checkpoint_episode(self) -> int:
+        if self.episodes_per_cycle <= 0:
+            return 0
+        if not self.align_to_episode_count:
+            return self.completed_episodes + self.episodes_per_cycle
+        remainder = self.completed_episodes % self.episodes_per_cycle
+        if remainder == 0:
+            return self.completed_episodes + self.episodes_per_cycle
+        return self.completed_episodes + (self.episodes_per_cycle - remainder)
+
+    def _on_training_start(self) -> None:
+        self.save_dir.mkdir(parents=True, exist_ok=True)
+
+    def _on_step(self) -> bool:
+        if self.episodes_per_cycle <= 0:
+            return True
+
+        infos = self.locals.get("infos", [])
+        for info in infos:
+            if info.get("episode") is None:
+                continue
+            self.completed_episodes += 1
+            while self.completed_episodes >= self._next_checkpoint_episode:
+                cycle_suffix = f"_update_{self.next_cycle_index:06d}"
+                model_path, weights_path = save_training_artifacts(
+                    model=self.model,
+                    save_dir=self.save_dir,
+                    model_name=self.model_name,
+                    save_policy_weights=self.save_policy_weights,
+                    suffix=cycle_suffix,
+                    save_replay_buffer=self.save_replay_buffer,
+                )
+                weights_message = f", policy weights to {weights_path}" if weights_path is not None else ""
+                print(f"Saved cycle checkpoint to {model_path}{weights_message}")
+                self.next_cycle_index += 1
+                self._next_checkpoint_episode += self.episodes_per_cycle
         return True
 
 
@@ -761,6 +931,7 @@ class EpisodeArtifactCallback(BaseCallback):
         save_policy_weights: bool,
         initial_completed_episodes: int = 0,
         save_checkpoint_artifacts: bool = True,
+        save_replay_buffer: bool = False,
     ) -> None:
         super().__init__(verbose=0)
         self.video_dir = video_dir
@@ -771,6 +942,7 @@ class EpisodeArtifactCallback(BaseCallback):
         self.save_policy_weights = save_policy_weights
         self.completed_episodes = max(0, int(initial_completed_episodes))
         self.save_checkpoint_artifacts = bool(save_checkpoint_artifacts)
+        self.save_replay_buffer = bool(save_replay_buffer)
         self._envs: list[FishPathAvoidEnv] = []
         self.top_video_dir = self.video_dir / "top_view"
         self.head_video_dir = self.video_dir / "head Cemara"
@@ -812,6 +984,7 @@ class EpisodeArtifactCallback(BaseCallback):
                     model_name=self.model_name,
                     save_policy_weights=self.save_policy_weights,
                     suffix=episode_suffix,
+                    save_replay_buffer=self.save_replay_buffer,
                 )
             weights_message = f", weights to {weights_path}" if weights_path is not None else ""
             if saved_path is not None:
@@ -1159,16 +1332,39 @@ class EpisodeRewardPlotCallback(BaseCallback):
 def main() -> None:
     args = parse_args()
     config = make_config()
+    if args.algo is not None:
+        config.train.algorithm = str(args.algo).lower()
     if args.log_dir is not None:
         config.train.log_dir = str(Path(args.log_dir).resolve())
     if args.model_name is not None:
         config.train.model_name = str(args.model_name)
+    if args.sac_buffer_size is not None:
+        config.train.sac_buffer_size = int(args.sac_buffer_size)
+    if args.sac_learning_starts is not None:
+        config.train.sac_learning_starts = int(args.sac_learning_starts)
+    if args.sac_train_freq_steps is not None:
+        config.train.sac_train_freq_steps = int(args.sac_train_freq_steps)
+    if args.sac_gradient_steps is not None:
+        config.train.sac_gradient_steps = int(args.sac_gradient_steps)
+    if args.sac_tau is not None:
+        config.train.sac_tau = float(args.sac_tau)
+    if args.sac_ent_coef is not None:
+        config.train.sac_ent_coef = str(args.sac_ent_coef)
+    if args.sac_target_update_interval is not None:
+        config.train.sac_target_update_interval = int(args.sac_target_update_interval)
+    if args.sac_target_entropy is not None:
+        config.train.sac_target_entropy = str(args.sac_target_entropy)
+    if args.sac_optimize_memory_usage is not None:
+        config.train.sac_optimize_memory_usage = bool(args.sac_optimize_memory_usage)
     scenario_path = resolve_scenario_path(args)
     scenario_cycle_paths = resolve_scenario_cycle_paths(args)
     resume_path = resolve_resume_path(args)
     resume_policy_weights_path = resolve_resume_policy_weights_path(args)
     bc_weights_path = resolve_bc_weights_path(args)
     run_id = _sanitize_run_id(args.run_id or _default_run_id())
+    algo_name = str(config.train.algorithm).strip().lower()
+    if algo_name not in {"ppo", "sac"}:
+        raise ValueError(f"Unsupported algorithm {config.train.algorithm!r}. Expected 'ppo' or 'sac'.")
     if sum(path is not None for path in (resume_path, resume_policy_weights_path, bc_weights_path)) > 1:
         raise ValueError("Use only one of --resume-from, --resume-policy-weights, or --bc-weights.")
     if scenario_path is not None and scenario_cycle_paths:
@@ -1201,6 +1397,26 @@ def main() -> None:
         raise ValueError("--scenario-cycle-sample-size must be non-negative.")
     if args.use_lora and args.lora_rank <= 0:
         raise ValueError("--lora-rank must be positive when --use-lora is enabled.")
+    if args.use_lora and algo_name != "ppo":
+        raise ValueError("LoRA fine-tuning is currently only supported for PPO.")
+    if config.train.sac_buffer_size <= 0:
+        raise ValueError("--sac-buffer-size must be positive.")
+    if config.train.sac_learning_starts < 0:
+        raise ValueError("--sac-learning-starts must be non-negative.")
+    if config.train.sac_train_freq_steps <= 0:
+        raise ValueError("--sac-train-freq-steps must be positive.")
+    if config.train.sac_gradient_steps == 0:
+        raise ValueError("--sac-gradient-steps cannot be 0.")
+    if config.train.sac_tau <= 0.0 or config.train.sac_tau > 1.0:
+        raise ValueError("--sac-tau must be within (0, 1].")
+    if config.train.sac_target_update_interval <= 0:
+        raise ValueError("--sac-target-update-interval must be positive.")
+    if algo_name == "sac" and config.train.sac_optimize_memory_usage:
+        print(
+            "SAC optimize_memory_usage is disabled because Stable-Baselines3 DictReplayBuffer "
+            "does not support it for dict observations."
+        )
+        config.train.sac_optimize_memory_usage = False
 
     convergence_enabled = int(args.convergence_window) > 0
     convergence_min_episodes = int(args.convergence_min_episodes) if int(args.convergence_min_episodes) > 0 else int(args.convergence_window)
@@ -1218,7 +1434,7 @@ def main() -> None:
         raise ValueError("--rollout-episodes-per-update requires scenario-cycle mode.")
     if scenario_cycle_sample_size > 0 and rollout_episodes_per_update != scenario_cycle_sample_size:
         raise ValueError(
-            "--scenario-cycle-sample-size must equal --rollout-episodes-per-update so each sampled scene runs exactly one episode per PPO update."
+            "--scenario-cycle-sample-size must equal --rollout-episodes-per-update so each sampled scene runs exactly one episode per cycle."
         )
     episode_cycle_enabled = rollout_episodes_per_update > 0
     if scenario_cycle_paths and config.train.num_envs != 1:
@@ -1233,9 +1449,10 @@ def main() -> None:
             if int(args.rollout_step_budget) > 0
             else int(config.env.max_episode_steps) * int(rollout_episodes_per_update)
         )
-        if rollout_step_budget <= 0:
-            raise ValueError("Episode-cycle PPO requires a positive rollout step budget.")
-        config.train.n_steps = int(rollout_step_budget)
+        if algo_name == "ppo":
+            if rollout_step_budget <= 0:
+                raise ValueError("Episode-cycle PPO requires a positive rollout step budget.")
+            config.train.n_steps = int(rollout_step_budget)
         if args.video_interval_episodes is None:
             config.train.video_interval_episodes = int(rollout_episodes_per_update)
 
@@ -1285,10 +1502,23 @@ def main() -> None:
         "freeze_actor_base": bool(args.lora_freeze_actor_base),
         "train_bias": bool(args.lora_train_bias),
     }
+    config_payload["algorithm"] = algo_name
+    config_payload["sac"] = {
+        "buffer_size": int(config.train.sac_buffer_size),
+        "learning_starts": int(config.train.sac_learning_starts),
+        "train_freq_steps": int(config.train.sac_train_freq_steps),
+        "gradient_steps": int(config.train.sac_gradient_steps),
+        "tau": float(config.train.sac_tau),
+        "ent_coef": _parse_auto_or_float(config.train.sac_ent_coef),
+        "target_update_interval": int(config.train.sac_target_update_interval),
+        "target_entropy": _parse_auto_or_float(config.train.sac_target_entropy),
+        "optimize_memory_usage": bool(config.train.sac_optimize_memory_usage),
+    }
     config_payload["rollout_schedule"] = {
         "episode_cycle_enabled": episode_cycle_enabled,
         "episodes_per_update": int(rollout_episodes_per_update),
         "scenario_cycle_sample_size": int(scenario_cycle_sample_size),
+        "align_updates_to_episode_count": bool(args.align_rollout_updates_to_episode_count),
         "step_budget": int(rollout_step_budget),
         "strict_step_budget": bool(args.strict_rollout_step_budget),
     }
@@ -1325,6 +1555,7 @@ def main() -> None:
     elif requested_device == "auto":
         requested_device = "cuda" if torch.cuda.is_available() else "cpu"
 
+    print(f"Algorithm: {algo_name.upper()}")
     print(f"Training device: {requested_device}")
     print(f"Run ID: {run_id}")
     if scenario_path is not None:
@@ -1333,10 +1564,18 @@ def main() -> None:
         sampling_message = ""
         if scenario_cycle_sample_size > 0:
             sampling_message = f", random {scenario_cycle_sample_size}-scene batch/update"
+        alignment_message = ""
+        if episode_cycle_enabled and args.align_rollout_updates_to_episode_count:
+            next_alignment_episode = existing_episode_count + (
+                rollout_episodes_per_update - (existing_episode_count % rollout_episodes_per_update)
+                if existing_episode_count % rollout_episodes_per_update != 0
+                else rollout_episodes_per_update
+            )
+            alignment_message = f", first aligned update at episode {next_alignment_episode}"
         print(
             "Training on scenario cycle: "
-            f"{len(scenario_cycle_paths)} scenes{sampling_message}, "
-            f"{rollout_episodes_per_update} episodes/update, "
+            f"{len(scenario_cycle_paths)} scenes{sampling_message}{alignment_message}, "
+            f"{rollout_episodes_per_update} episodes/cycle, "
             f"step budget {rollout_step_budget}"
         )
     if resume_path is not None:
@@ -1366,7 +1605,7 @@ def main() -> None:
             "Episodes still count correctly, but asynchronous completion makes the stopping point less interpretable. "
             "Use --num-envs 1 for deterministic per-scenario convergence windows."
         )
-    if episode_cycle_enabled:
+    if episode_cycle_enabled and algo_name == "ppo":
         estimated_buffer_bytes = _estimate_rollout_buffer_bytes(rollout_step_budget, config.env)
         print(f"Approx rollout observation buffer: {estimated_buffer_bytes / (1024 ** 3):.2f} GiB")
 
@@ -1401,7 +1640,11 @@ def main() -> None:
     env = VecTransposeImage(env)
 
     # The policy consumes a dict observation: {"image": head camera RGB, "imu": body-frame IMU vector}.
-    algorithm_class: type[PPO] = EpisodeCyclePPO if episode_cycle_enabled else PPO
+    algorithm_class: type[BaseAlgorithm]
+    if algo_name == "ppo":
+        algorithm_class = EpisodeCyclePPO if episode_cycle_enabled else PPO
+    else:
+        algorithm_class = SAC
     policy_spec = LoraMultiInputPolicy if args.use_lora else "MultiInputPolicy"
     policy_kwargs: dict[str, Any] = {"net_arch": list(config.train.policy_hidden_sizes)}
     if args.use_lora:
@@ -1416,47 +1659,82 @@ def main() -> None:
             }
         )
 
-    if resume_path is not None and not args.use_lora and not episode_cycle_enabled:
-        model = PPO.load(
+    direct_load_resume_allowed = resume_path is not None and not args.use_lora and (
+        algo_name == "sac" or not episode_cycle_enabled
+    )
+    if direct_load_resume_allowed:
+        model = algorithm_class.load(
             str(resume_path),
             env=env,
             device=requested_device,
         )
         print(f"Loaded model with existing num_timesteps={int(model.num_timesteps)}")
+        replay_buffer_path = load_replay_buffer_if_available(model, resume_path)
+        if replay_buffer_path is not None:
+            print(f"Loaded replay buffer from {replay_buffer_path}")
+        elif algo_name == "sac":
+            print("Replay buffer sidecar not found. SAC resume will continue with a fresh replay buffer.")
     else:
-        model_kwargs: dict[str, Any] = {
-            "policy": policy_spec,
-            "env": env,
-            "learning_rate": config.train.learning_rate,
-            "n_steps": config.train.n_steps,
-            "batch_size": config.train.batch_size,
-            "gamma": config.train.gamma,
-            "gae_lambda": config.train.gae_lambda,
-            "clip_range": config.train.clip_range,
-            "ent_coef": config.train.ent_coef,
-            "vf_coef": config.train.vf_coef,
-            "max_grad_norm": config.train.max_grad_norm,
-            "policy_kwargs": policy_kwargs,
-            "verbose": 1,
-            "seed": config.train.seed,
-            "device": requested_device,
-        }
-        if episode_cycle_enabled:
-            model_kwargs["rollout_episodes_per_update"] = int(rollout_episodes_per_update)
-            model_kwargs["strict_episode_budget"] = bool(args.strict_rollout_step_budget)
-            model_kwargs["post_update_save_dir"] = str(checkpoint_dir)
-            model_kwargs["post_update_model_name"] = config.train.model_name
-            model_kwargs["post_update_save_policy_weights"] = bool(config.train.save_policy_weights)
-            model_kwargs["post_update_save_every_iterations"] = 1
-            model_kwargs["post_update_initial_iteration"] = int(existing_cycle_update_index)
+        if algo_name == "ppo":
+            model_kwargs: dict[str, Any] = {
+                "policy": policy_spec,
+                "env": env,
+                "learning_rate": config.train.learning_rate,
+                "n_steps": config.train.n_steps,
+                "batch_size": config.train.batch_size,
+                "gamma": config.train.gamma,
+                "gae_lambda": config.train.gae_lambda,
+                "clip_range": config.train.clip_range,
+                "ent_coef": config.train.ent_coef,
+                "vf_coef": config.train.vf_coef,
+                "max_grad_norm": config.train.max_grad_norm,
+                "policy_kwargs": policy_kwargs,
+                "verbose": 1,
+                "seed": config.train.seed,
+                "device": requested_device,
+            }
+            if episode_cycle_enabled:
+                model_kwargs["rollout_episodes_per_update"] = int(rollout_episodes_per_update)
+                model_kwargs["align_rollout_updates_to_episode_count"] = bool(args.align_rollout_updates_to_episode_count)
+                model_kwargs["rollout_episode_initial_offset"] = int(existing_episode_count)
+                model_kwargs["strict_episode_budget"] = bool(args.strict_rollout_step_budget)
+                model_kwargs["post_update_save_dir"] = str(checkpoint_dir)
+                model_kwargs["post_update_model_name"] = config.train.model_name
+                model_kwargs["post_update_save_policy_weights"] = bool(config.train.save_policy_weights)
+                model_kwargs["post_update_save_every_iterations"] = 1
+                model_kwargs["post_update_initial_iteration"] = int(existing_cycle_update_index)
+        else:
+            model_kwargs = {
+                "policy": "MultiInputPolicy",
+                "env": env,
+                "learning_rate": config.train.learning_rate,
+                "buffer_size": int(config.train.sac_buffer_size),
+                "learning_starts": int(config.train.sac_learning_starts),
+                "batch_size": config.train.batch_size,
+                "tau": float(config.train.sac_tau),
+                "gamma": config.train.gamma,
+                "train_freq": (int(config.train.sac_train_freq_steps), "step"),
+                "gradient_steps": int(config.train.sac_gradient_steps),
+                "ent_coef": _parse_auto_or_float(config.train.sac_ent_coef),
+                "target_update_interval": int(config.train.sac_target_update_interval),
+                "target_entropy": _parse_auto_or_float(config.train.sac_target_entropy),
+                "policy_kwargs": {"net_arch": list(config.train.policy_hidden_sizes)},
+                "verbose": 1,
+                "seed": config.train.seed,
+                "device": requested_device,
+                "optimize_memory_usage": bool(config.train.sac_optimize_memory_usage),
+            }
         model = algorithm_class(**model_kwargs)
 
         if resume_path is not None or resume_policy_weights_path is not None:
             if resume_path is not None:
+                load_candidates = [algorithm_class]
+                if algo_name == "ppo" and algorithm_class is not PPO:
+                    load_candidates.append(PPO)
                 resume_policy_state, resume_num_timesteps = _load_resume_policy_snapshot(
                     resume_path,
                     device=requested_device,
-                    algorithm_class=algorithm_class,
+                    load_candidates=load_candidates,
                 )
             else:
                 resume_policy_state, resume_num_timesteps = _load_resume_policy_weights_snapshot(
@@ -1475,15 +1753,22 @@ def main() -> None:
             actor_state_dict = bc_payload.get("actor_state_dict")
             if not isinstance(actor_state_dict, dict):
                 raise KeyError(f"BC checkpoint does not contain 'actor_state_dict': {bc_weights_path}")
-            loaded_keys = load_actor_state_dict(model.policy, actor_state_dict)
+            if algo_name == "sac":
+                loaded_keys, skipped_keys = load_bc_actor_state_dict_into_sac_policy(model.policy, actor_state_dict)
+            else:
+                loaded_keys = load_actor_state_dict(model.policy, actor_state_dict)
+                skipped_keys = []
             if not loaded_keys:
                 raise RuntimeError(f"No actor parameters were loaded from BC checkpoint: {bc_weights_path}")
-            print(f"Loaded {len(loaded_keys)} BC actor parameter tensors into PPO.")
+            print(f"Loaded {len(loaded_keys)} BC actor parameter tensors into {algo_name.upper()}.")
+            if skipped_keys:
+                print(f"Skipped {len(set(skipped_keys))} BC tensors incompatible with the {algo_name.upper()} actor head.")
     checkpoint_callback = WeightCheckpointCallback(
         save_dir=checkpoint_dir,
         model_name=config.train.model_name,
         save_freq=config.train.checkpoint_interval_timesteps,
         save_policy_weights=config.train.save_policy_weights,
+        save_replay_buffer=algo_name == "sac",
     )
     episode_metrics_callback = EpisodeMetricsCallback(
         csv_path=episode_metrics_path,
@@ -1498,6 +1783,19 @@ def main() -> None:
         checkpoint_callback,
         episode_metrics_callback,
     ]
+    if algo_name == "sac" and episode_cycle_enabled:
+        callback_list.append(
+            CycleCheckpointCallback(
+                save_dir=checkpoint_dir,
+                model_name=config.train.model_name,
+                save_policy_weights=config.train.save_policy_weights,
+                save_replay_buffer=algo_name == "sac",
+                episodes_per_cycle=int(rollout_episodes_per_update),
+                initial_episode_count=existing_episode_count,
+                initial_cycle_index=existing_cycle_update_index,
+                align_to_episode_count=bool(args.align_rollout_updates_to_episode_count),
+            )
+        )
     if args.plot_reward:
         callback_list.append(
             EpisodeRewardPlotCallback(
@@ -1516,6 +1814,7 @@ def main() -> None:
                 save_policy_weights=config.train.save_policy_weights,
                 initial_completed_episodes=existing_episode_count,
                 save_checkpoint_artifacts=not episode_cycle_enabled,
+                save_replay_buffer=algo_name == "sac",
             )
         )
     if convergence_enabled:
@@ -1552,6 +1851,7 @@ def main() -> None:
             model_name=config.train.model_name,
             save_policy_weights=config.train.save_policy_weights,
             suffix="_interrupted",
+            save_replay_buffer=algo_name == "sac",
         )
         archived_model_path, archived_weights_path = save_training_artifacts(
             model=model,
@@ -1559,6 +1859,7 @@ def main() -> None:
             model_name=config.train.model_name,
             save_policy_weights=config.train.save_policy_weights,
             suffix=f"_interrupted_{run_id}",
+            save_replay_buffer=algo_name == "sac",
         )
         weights_message = (
             f", interrupted policy weights to {latest_weights_path}"
@@ -1573,6 +1874,7 @@ def main() -> None:
             save_dir=log_dir,
             model_name=config.train.model_name,
             save_policy_weights=config.train.save_policy_weights,
+            save_replay_buffer=algo_name == "sac",
         )
         archived_model_path, archived_weights_path = save_training_artifacts(
             model=model,
@@ -1580,6 +1882,7 @@ def main() -> None:
             model_name=config.train.model_name,
             save_policy_weights=config.train.save_policy_weights,
             suffix=f"_{run_id}",
+            save_replay_buffer=algo_name == "sac",
         )
         weights_message = f", policy weights to {latest_weights_path}" if latest_weights_path is not None else ""
         if convergence_callback is not None and convergence_callback.converged:
@@ -1592,6 +1895,7 @@ def main() -> None:
 
     training_summary = {
         "run_id": run_id,
+        "algorithm": algo_name,
         "scenario_path": None if scenario_path is None else str(scenario_path),
         "scenario_cycle_paths": None if not scenario_cycle_paths else [str(path) for path in scenario_cycle_paths],
         "resume_from": None if resume_path is None else str(resume_path),
@@ -1612,7 +1916,19 @@ def main() -> None:
         "lora_enabled": bool(args.use_lora),
         "rollout_episodes_per_update": int(rollout_episodes_per_update),
         "scenario_cycle_sample_size": int(scenario_cycle_sample_size),
+        "align_rollout_updates_to_episode_count": bool(args.align_rollout_updates_to_episode_count),
         "rollout_step_budget": int(rollout_step_budget),
+        "sac": {
+            "buffer_size": int(config.train.sac_buffer_size),
+            "learning_starts": int(config.train.sac_learning_starts),
+            "train_freq_steps": int(config.train.sac_train_freq_steps),
+            "gradient_steps": int(config.train.sac_gradient_steps),
+            "tau": float(config.train.sac_tau),
+            "ent_coef": _parse_auto_or_float(config.train.sac_ent_coef),
+            "target_update_interval": int(config.train.sac_target_update_interval),
+            "target_entropy": _parse_auto_or_float(config.train.sac_target_entropy),
+            "optimize_memory_usage": bool(config.train.sac_optimize_memory_usage),
+        },
         "converged": bool(convergence_callback.converged) if convergence_callback is not None else False,
         "convergence_summary": None if convergence_callback is None else convergence_callback.summary,
         "latest_window_summary": None if convergence_callback is None else convergence_callback.latest_window_summary,

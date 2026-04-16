@@ -83,6 +83,8 @@ class EpisodeCyclePPO(PPO):
         self,
         *args,
         rollout_episodes_per_update: int = 0,
+        align_rollout_updates_to_episode_count: bool = False,
+        rollout_episode_initial_offset: int = 0,
         strict_episode_budget: bool = True,
         post_update_save_dir: str | None = None,
         post_update_model_name: str = "ppo_fish_baseline",
@@ -95,12 +97,26 @@ class EpisodeCyclePPO(PPO):
             kwargs["rollout_buffer_class"] = ResizableDictRolloutBuffer
         super().__init__(*args, **kwargs)
         self.rollout_episodes_per_update = max(0, int(rollout_episodes_per_update))
+        self.align_rollout_updates_to_episode_count = bool(align_rollout_updates_to_episode_count)
+        self.rollout_episode_initial_offset = max(0, int(rollout_episode_initial_offset))
+        self.rollout_completed_episodes = int(self.rollout_episode_initial_offset)
         self.strict_episode_budget = bool(strict_episode_budget)
         self.post_update_save_dir = None if post_update_save_dir is None else str(Path(post_update_save_dir).resolve())
         self.post_update_model_name = str(post_update_model_name)
         self.post_update_save_policy_weights = bool(post_update_save_policy_weights)
         self.post_update_save_every_iterations = max(0, int(post_update_save_every_iterations))
         self.post_update_initial_iteration = max(0, int(post_update_initial_iteration))
+
+    def _target_rollout_episode_count(self) -> int:
+        if self.rollout_episodes_per_update <= 0:
+            return 0
+        if not self.align_rollout_updates_to_episode_count:
+            return int(self.rollout_episodes_per_update)
+
+        remainder = int(self.rollout_completed_episodes) % int(self.rollout_episodes_per_update)
+        if remainder == 0:
+            return int(self.rollout_episodes_per_update)
+        return int(self.rollout_episodes_per_update) - remainder
 
     def collect_rollouts(
         self,
@@ -115,6 +131,7 @@ class EpisodeCyclePPO(PPO):
         assert self._last_obs is not None, "No previous observation was provided"
         self.policy.set_training_mode(False)
 
+        target_rollout_episodes = self._target_rollout_episode_count()
         n_steps = 0
         completed_episodes = 0
         rollout_buffer.reset()
@@ -123,7 +140,7 @@ class EpisodeCyclePPO(PPO):
 
         callback.on_rollout_start()
 
-        while n_steps < n_rollout_steps and completed_episodes < self.rollout_episodes_per_update:
+        while n_steps < n_rollout_steps and completed_episodes < target_rollout_episodes:
             if self.use_sde and self.sde_sample_freq > 0 and n_steps % self.sde_sample_freq == 0:
                 self.policy.reset_noise(env.num_envs)
 
@@ -175,7 +192,7 @@ class EpisodeCyclePPO(PPO):
             self._last_obs = new_obs  # type: ignore[assignment]
             self._last_episode_starts = dones
 
-        if completed_episodes < self.rollout_episodes_per_update and self.strict_episode_budget:
+        if completed_episodes < target_rollout_episodes and self.strict_episode_budget:
             raise RuntimeError(
                 "Episode-cycle rollout hit the step budget before collecting the requested number of episodes. "
                 "Increase --rollout-step-budget or reduce --rollout-episodes-per-update."
@@ -192,6 +209,7 @@ class EpisodeCyclePPO(PPO):
         rollout_buffer.compute_returns_and_advantage(last_values=values, dones=dones)
         callback.update_locals(locals())
         callback.on_rollout_end()
+        self.rollout_completed_episodes += int(completed_episodes)
         return True
 
     def _save_post_update_checkpoint(self, iteration: int) -> None:

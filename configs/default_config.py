@@ -168,6 +168,7 @@ class FishEnvConfig:
 class TrainConfig:
     total_timesteps: int = 3_000_000
     num_envs: int = 4
+    algorithm: str = "ppo"
     learning_rate: float = 3e-4
     n_steps: int = 1024
     batch_size: int = 256
@@ -184,6 +185,15 @@ class TrainConfig:
     checkpoint_interval_timesteps: int = 0
     checkpoint_dirname: str = "checkpoints"
     save_policy_weights: bool = True
+    sac_buffer_size: int = 100_000
+    sac_learning_starts: int = 5_000
+    sac_train_freq_steps: int = 1
+    sac_gradient_steps: int = 1
+    sac_tau: float = 0.005
+    sac_ent_coef: str = "auto"
+    sac_target_update_interval: int = 1
+    sac_target_entropy: str = "auto"
+    sac_optimize_memory_usage: bool = False
     monitor_filename: str = "monitor.csv"
     episode_metrics_filename: str = "episode_metrics.csv"
     save_episode_videos: bool = False

@@ -239,3 +239,56 @@ def load_matching_policy_state_dict(policy, state_dict: dict[str, torch.Tensor])
             loaded_keys.append(target_key)
 
     return loaded_keys, skipped_keys
+
+
+def load_bc_actor_state_dict_into_sac_policy(
+    policy,
+    actor_state_dict: dict[str, torch.Tensor],
+) -> tuple[list[str], list[str]]:
+    loaded_keys: list[str] = []
+    skipped_keys: list[str] = []
+    named_parameters = dict(policy.named_parameters())
+
+    key_mapping = {
+        "action_net.weight": "actor.mu.weight",
+        "action_net.bias": "actor.mu.bias",
+    }
+
+    for source_key, value in actor_state_dict.items():
+        if source_key == "log_std":
+            continue
+        if source_key.startswith("features_extractor."):
+            target_key = f"actor.{source_key}"
+        elif source_key.startswith("mlp_extractor.policy_net."):
+            suffix = source_key.split("mlp_extractor.policy_net.", 1)[1]
+            target_key = f"actor.latent_pi.{suffix}"
+        else:
+            target_key = key_mapping.get(source_key)
+
+        if target_key is None:
+            skipped_keys.append(source_key)
+            continue
+
+        parameter = named_parameters.get(target_key)
+        if parameter is None or tuple(parameter.shape) != tuple(value.shape):
+            skipped_keys.append(source_key)
+            continue
+
+        parameter.data.copy_(value.to(device=parameter.device, dtype=parameter.dtype))
+        loaded_keys.append(target_key)
+
+    ppo_log_std = actor_state_dict.get("log_std")
+    if ppo_log_std is not None:
+        log_std_bias = named_parameters.get("actor.log_std.bias")
+        if log_std_bias is not None and tuple(log_std_bias.shape) == tuple(ppo_log_std.shape):
+            log_std_bias.data.copy_(ppo_log_std.to(device=log_std_bias.device, dtype=log_std_bias.dtype))
+            loaded_keys.append("actor.log_std.bias")
+        else:
+            skipped_keys.append("log_std")
+
+        log_std_weight = named_parameters.get("actor.log_std.weight")
+        if log_std_weight is not None:
+            log_std_weight.data.zero_()
+            loaded_keys.append("actor.log_std.weight")
+
+    return loaded_keys, skipped_keys
