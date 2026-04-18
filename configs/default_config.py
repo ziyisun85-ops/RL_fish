@@ -12,7 +12,7 @@ RUNS_DIR = PROJECT_ROOT / "runs"
 
 @dataclass
 class ModelConfig:
-    xml_path: str = str((MODEL_DIR / "fish_pool_scene.xml").resolve())
+    xml_path: str = (Path("model") / "fish_pool_scene.xml").as_posix()
 
 
 @dataclass
@@ -180,14 +180,16 @@ class TrainConfig:
     max_grad_norm: float = 0.5
     policy_hidden_sizes: tuple[int, ...] = (128, 128)
     seed: int = 7
-    log_dir: str = str((RUNS_DIR / "ppo_fish_baseline").resolve())
+    log_dir: str = (Path("runs") / "ppo_fish_baseline").as_posix()
     model_name: str = "ppo_fish_baseline"
     checkpoint_interval_timesteps: int = 0
     checkpoint_dirname: str = "checkpoints"
+    checkpoint_metrics_filename: str = "checkpoint_metrics.csv"
     save_policy_weights: bool = True
     sac_buffer_size: int = 100_000
     sac_learning_starts: int = 5_000
     sac_train_freq_steps: int = 1
+    sac_train_freq_unit: str = "step"
     sac_gradient_steps: int = 1
     sac_tau: float = 0.005
     sac_ent_coef: str = "auto"

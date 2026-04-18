@@ -5,13 +5,17 @@ import csv
 import json
 import os
 import re
+import time
 from collections import deque
 from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+os.environ["CUDA_VISIBLE_DEVICES"] = ""
+
 import numpy as np
 import torch
+import torch.nn as nn
 from stable_baselines3 import PPO, SAC
 from stable_baselines3.common.base_class import BaseAlgorithm
 from stable_baselines3.common.callbacks import BaseCallback, CallbackList
@@ -21,6 +25,7 @@ from algorithms import EpisodeCyclePPO
 from configs.default_config import PROJECT_ROOT, config_to_dict, make_config
 from envs import FishPathAvoidEnv
 from utils.lora_policy import DEFAULT_LORA_TARGET_MODULES, LoraMultiInputPolicy
+from utils.lora_sac_policy import DEFAULT_SAC_LORA_TARGET_MODULES, LoraSACPolicy
 from utils.policy_utils import (
     load_actor_state_dict,
     load_bc_actor_state_dict_into_sac_policy,
@@ -34,9 +39,11 @@ EPISODE_METRICS_FIELDNAMES = [
     "scenario_id",
     "episode_index",
     "num_timesteps",
+    "train_loss",
     "episode_reward",
     "episode_length",
     "episode_time_sec",
+    "episode_train_time_sec",
     "termination_reason",
     "episode_return",
     "goal_progress_ratio",
@@ -50,6 +57,22 @@ EPISODE_METRICS_FIELDNAMES = [
     "wall_collision",
     "out_of_bounds",
     "timeout",
+]
+
+
+CHECKPOINT_METRICS_FIELDNAMES = [
+    "run_id",
+    "update_index",
+    "num_timesteps",
+    "episodes_in_cycle",
+    "episodes_completed_total",
+    "success_count",
+    "success_rate",
+    "mean_episode_reward",
+    "mean_episode_length",
+    "cycle_train_time_sec",
+    "model_path",
+    "policy_weights_path",
 ]
 
 
@@ -140,7 +163,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--scenario-dir",
         type=str,
-        default=str((PROJECT_ROOT / "scenarios" / "training_envs").resolve()),
+        default=(Path("scenarios") / "training_envs").as_posix(),
         help="Directory containing exported fixed environment JSON files.",
     )
     parser.add_argument(
@@ -172,6 +195,12 @@ def parse_args() -> argparse.Namespace:
         type=str,
         default=None,
         help="Optional JSON file defining an explicit per-episode scenario cycle order.",
+    )
+    parser.add_argument(
+        "--scenario-cycle-selection",
+        type=str,
+        default=None,
+        help="Optional scene ids/ranges like '1-20,60-80'. Requires --scenario-cycle-dir and selects train_env_###.json files.",
     )
     parser.add_argument(
         "--scenario-cycle-start-index",
@@ -231,7 +260,14 @@ def parse_args() -> argparse.Namespace:
         "--sac-train-freq-steps",
         type=int,
         default=None,
-        help="Override SAC train frequency in environment steps.",
+        help="Override SAC training trigger count. The unit is controlled by --sac-train-freq-unit.",
+    )
+    parser.add_argument(
+        "--sac-train-freq-unit",
+        type=str,
+        choices=("step", "episode"),
+        default=None,
+        help="Unit for SAC training triggers: environment steps or completed episodes.",
     )
     parser.add_argument(
         "--sac-gradient-steps",
@@ -273,7 +309,7 @@ def parse_args() -> argparse.Namespace:
         "--use-lora",
         action=argparse.BooleanOptionalAction,
         default=False,
-        help="Enable LoRA-based PPO fine-tuning instead of full actor finetuning.",
+        help="Enable LoRA-based actor fine-tuning instead of full actor finetuning.",
     )
     parser.add_argument("--lora-rank", type=int, default=4, help="LoRA rank used when --use-lora is enabled.")
     parser.add_argument("--lora-alpha", type=float, default=8.0, help="LoRA alpha used when --use-lora is enabled.")
@@ -281,8 +317,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--lora-target-modules",
         nargs="+",
-        default=list(DEFAULT_LORA_TARGET_MODULES),
-        help="Exact linear module names patched with LoRA.",
+        default=None,
+        help="Exact linear module names patched with LoRA. Defaults depend on --algo.",
     )
     parser.add_argument(
         "--lora-freeze-actor-base",
@@ -379,11 +415,38 @@ def resolve_scenario_path(args: argparse.Namespace) -> Path | None:
 
 
 def resolve_scenario_cycle_paths(args: argparse.Namespace) -> list[Path]:
-    if args.scenario_cycle_dir is None and args.scenario_cycle_list is None:
+    if (
+        args.scenario_cycle_dir is None
+        and args.scenario_cycle_list is None
+        and args.scenario_cycle_selection is None
+    ):
         return []
+
+    if args.scenario_cycle_list is not None and args.scenario_cycle_selection is not None:
+        raise ValueError("Use either --scenario-cycle-list or --scenario-cycle-selection, not both.")
+
+    if args.scenario_cycle_selection is not None and args.scenario_cycle_dir is None:
+        raise ValueError("--scenario-cycle-selection requires --scenario-cycle-dir.")
 
     if args.scenario_cycle_dir is not None and args.scenario_cycle_list is not None:
         raise ValueError("Use either --scenario-cycle-dir or --scenario-cycle-list, not both.")
+
+    if args.scenario_cycle_selection is not None:
+        selected = resolve_selected_scenario_cycle_paths(
+            selection_text=args.scenario_cycle_selection,
+            scenario_dir_arg=args.scenario_cycle_dir,
+        )
+        if args.scenario_cycle_start_index is not None or args.scenario_cycle_end_index is not None:
+            start_index = 1 if args.scenario_cycle_start_index is None else int(args.scenario_cycle_start_index)
+            end_index = len(selected) if args.scenario_cycle_end_index is None else int(args.scenario_cycle_end_index)
+            if start_index <= 0 or end_index <= 0:
+                raise ValueError("--scenario-cycle-start-index and --scenario-cycle-end-index must be positive.")
+            if start_index > end_index:
+                raise ValueError("--scenario-cycle-start-index cannot be greater than --scenario-cycle-end-index.")
+            selected = selected[start_index - 1 : end_index]
+            if not selected:
+                raise RuntimeError("The requested scenario cycle selection is empty.")
+        return selected
 
     if args.scenario_cycle_list is not None:
         scenario_list_path = Path(args.scenario_cycle_list).resolve()
@@ -438,6 +501,70 @@ def resolve_scenario_cycle_paths(args: argparse.Namespace) -> list[Path]:
     if not selected:
         raise RuntimeError("The requested scenario cycle selection is empty.")
     return selected
+
+
+def parse_scenario_cycle_selection(selection_text: str) -> list[int]:
+    tokens = [token for token in re.split(r"[\s,]+", str(selection_text).strip()) if token]
+    if not tokens:
+        raise ValueError("--scenario-cycle-selection cannot be empty.")
+
+    selected_ids: list[int] = []
+    seen: set[int] = set()
+    for token in tokens:
+        if "-" in token:
+            start_text, end_text = token.split("-", 1)
+            start = int(start_text)
+            end = int(end_text)
+        else:
+            start = int(token)
+            end = start
+        if start <= 0 or end <= 0:
+            raise ValueError(f"Scenario ids must be positive integers, got: {token!r}")
+        if start > end:
+            raise ValueError(f"Scenario range start must be <= end, got: {token!r}")
+        for scene_index in range(start, end + 1):
+            if scene_index not in seen:
+                seen.add(scene_index)
+                selected_ids.append(scene_index)
+    return selected_ids
+
+
+def resolve_scenario_cycle_json_dir(scenario_dir_arg: str) -> Path:
+    scenario_dir = Path(scenario_dir_arg).expanduser().resolve()
+    if not scenario_dir.exists():
+        raise FileNotFoundError(f"Scenario cycle directory not found: {scenario_dir}")
+    if not scenario_dir.is_dir():
+        raise NotADirectoryError(f"Scenario cycle directory is not a directory: {scenario_dir}")
+
+    json_dir = scenario_dir / "json" if (scenario_dir / "json").is_dir() else scenario_dir
+    if not any(json_dir.glob("train_env_*.json")):
+        raise FileNotFoundError(
+            "Scenario cycle directory must either contain a 'json' subdirectory or direct "
+            f"'train_env_*.json' files: {scenario_dir}"
+        )
+    return json_dir
+
+
+def resolve_selected_scenario_cycle_paths(*, selection_text: str, scenario_dir_arg: str) -> list[Path]:
+    selected_indexes = parse_scenario_cycle_selection(selection_text)
+    scenario_json_dir = resolve_scenario_cycle_json_dir(scenario_dir_arg)
+
+    missing_scenarios: list[str] = []
+    scenario_paths: list[Path] = []
+    for scene_index in selected_indexes:
+        scenario_id = f"train_env_{int(scene_index):03d}"
+        candidate_path = (scenario_json_dir / f"{scenario_id}.json").resolve()
+        if not candidate_path.exists():
+            missing_scenarios.append(scenario_id)
+            continue
+        scenario_paths.append(candidate_path)
+
+    if missing_scenarios:
+        raise FileNotFoundError(
+            "The requested scenario cycle selection references missing scenario JSON files under "
+            f"{scenario_json_dir}: {', '.join(missing_scenarios)}"
+        )
+    return scenario_paths
 
 
 def resolve_resume_path(args: argparse.Namespace) -> Path | None:
@@ -603,10 +730,56 @@ def _parse_auto_or_float(value: Any) -> str | float:
     return float(value)
 
 
+def _relative_path_text(path: Path | str | None) -> str | None:
+    if path is None:
+        return None
+
+    path_obj = Path(path)
+    if path_obj.is_absolute():
+        try:
+            return path_obj.resolve().relative_to(PROJECT_ROOT).as_posix()
+        except ValueError:
+            return path_obj.as_posix()
+    return path_obj.as_posix()
+
+
 def _write_json(path: Path, payload: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", encoding="utf-8") as file:
         json.dump(payload, file, indent=2, ensure_ascii=False)
+
+
+def _latest_train_loss_from_model(model: BaseAlgorithm | None) -> float | None:
+    if model is None:
+        return None
+
+    logger = getattr(model, "logger", None)
+    values = getattr(logger, "name_to_value", None)
+    if not isinstance(values, dict) or not values:
+        return None
+
+    direct_loss = values.get("train/loss")
+    if direct_loss is not None:
+        try:
+            return float(direct_loss)
+        except (TypeError, ValueError):
+            return None
+
+    actor_loss = values.get("train/actor_loss")
+    critic_loss = values.get("train/critic_loss")
+    ent_coef_loss = values.get("train/ent_coef_loss")
+    if actor_loss is None and critic_loss is None and ent_coef_loss is None:
+        return None
+
+    total_loss = 0.0
+    for item in (actor_loss, critic_loss, ent_coef_loss):
+        if item is None:
+            continue
+        try:
+            total_loss += float(item)
+        except (TypeError, ValueError):
+            continue
+    return float(total_loss)
 
 
 def _convert_legacy_episode_row(
@@ -617,13 +790,15 @@ def _convert_legacy_episode_row(
 ) -> dict[str, Any]:
     return {
         "run_id": row.get("run_id", "legacy"),
-        "scenario_path": row.get("scenario_path", "" if scenario_path is None else str(scenario_path)),
+        "scenario_path": row.get("scenario_path", "" if scenario_path is None else (_relative_path_text(scenario_path) or "")),
         "scenario_id": row.get("scenario_id", ""),
         "episode_index": int(episode_index),
         "num_timesteps": _parse_csv_int(row.get("num_timesteps"), 0),
+        "train_loss": _parse_csv_float(row.get("train_loss"), float("nan")),
         "episode_reward": _parse_csv_float(row.get("episode_reward"), 0.0),
         "episode_length": _parse_csv_int(row.get("episode_length"), 0),
         "episode_time_sec": _parse_csv_float(row.get("episode_time_sec"), 0.0),
+        "episode_train_time_sec": _parse_csv_float(row.get("episode_train_time_sec"), 0.0),
         "termination_reason": str(row.get("termination_reason", "unknown")),
         "episode_return": _parse_csv_float(row.get("episode_return", row.get("episode_reward", 0.0)), 0.0),
         "goal_progress_ratio": _parse_csv_float(row.get("goal_progress_ratio"), 0.0),
@@ -686,6 +861,25 @@ def load_recent_episode_history(csv_path: Path, max_rows: int) -> list[dict[str,
     return list(recent_rows)
 
 
+def load_recent_cycle_episode_rows(csv_path: Path, max_rows: int) -> list[dict[str, Any]]:
+    if max_rows <= 0 or not csv_path.exists():
+        return []
+
+    recent_rows: deque[dict[str, Any]] = deque(maxlen=max_rows)
+    with csv_path.open("r", newline="", encoding="utf-8") as file:
+        reader = csv.DictReader(file)
+        for row in reader:
+            recent_rows.append(
+                {
+                    "success": _parse_csv_bool(row.get("success")),
+                    "episode_reward": _parse_csv_float(row.get("episode_reward"), 0.0),
+                    "episode_length": _parse_csv_int(row.get("episode_length"), 0),
+                    "episode_train_time_sec": _parse_csv_float(row.get("episode_train_time_sec"), 0.0),
+                }
+            )
+    return list(recent_rows)
+
+
 def save_training_artifacts(
     model: BaseAlgorithm,
     save_dir: Path,
@@ -727,6 +921,31 @@ def load_replay_buffer_if_available(model: BaseAlgorithm, model_path: Path) -> P
     return replay_buffer_path
 
 
+def _move_optimizer_state_to_device(optimizer: Any, device: torch.device) -> None:
+    if optimizer is None:
+        return
+    for state in optimizer.state.values():
+        for key, value in list(state.items()):
+            if isinstance(value, torch.Tensor):
+                state[key] = value.to(device=device)
+
+
+def _move_sac_model_to_device(model: SAC, device: str | torch.device) -> None:
+    target_device = torch.device(device)
+    model.device = target_device
+    model.policy.to(target_device)
+    model._create_aliases()
+
+    if getattr(model, "log_ent_coef", None) is not None:
+        model.log_ent_coef.data = model.log_ent_coef.data.to(device=target_device)
+    if getattr(model, "ent_coef_tensor", None) is not None:
+        model.ent_coef_tensor = model.ent_coef_tensor.to(device=target_device)
+
+    _move_optimizer_state_to_device(model.actor.optimizer, target_device)
+    _move_optimizer_state_to_device(model.critic.optimizer, target_device)
+    _move_optimizer_state_to_device(getattr(model, "ent_coef_optimizer", None), target_device)
+
+
 class WeightCheckpointCallback(BaseCallback):
     def __init__(
         self,
@@ -760,8 +979,8 @@ class WeightCheckpointCallback(BaseCallback):
             suffix=step_suffix,
             save_replay_buffer=self.save_replay_buffer,
         )
-        weights_message = f", policy weights to {weights_path}" if weights_path is not None else ""
-        print(f"Checkpoint saved to {model_path}{weights_message}")
+        weights_message = f", policy weights to {_relative_path_text(weights_path)}" if weights_path is not None else ""
+        print(f"Checkpoint saved to {_relative_path_text(model_path)}{weights_message}")
         self._last_save_timestep = int(self.num_timesteps)
         return True
 
@@ -771,24 +990,35 @@ class CycleCheckpointCallback(BaseCallback):
         self,
         *,
         save_dir: Path,
+        metrics_csv_path: Path | None,
         model_name: str,
+        run_id: str,
         save_policy_weights: bool,
         save_replay_buffer: bool = False,
         episodes_per_cycle: int,
         initial_episode_count: int = 0,
         initial_cycle_index: int = 0,
         align_to_episode_count: bool = False,
+        initial_cycle_episode_rows: list[dict[str, Any]] | None = None,
     ) -> None:
         super().__init__(verbose=0)
         self.save_dir = save_dir
+        self.metrics_csv_path = metrics_csv_path
         self.model_name = model_name
+        self.run_id = run_id
         self.save_policy_weights = bool(save_policy_weights)
         self.save_replay_buffer = bool(save_replay_buffer)
         self.episodes_per_cycle = max(0, int(episodes_per_cycle))
         self.completed_episodes = max(0, int(initial_episode_count))
         self.next_cycle_index = max(0, int(initial_cycle_index)) + 1
         self.align_to_episode_count = bool(align_to_episode_count)
+        initial_rows = list(initial_cycle_episode_rows or [])
+        if self.episodes_per_cycle > 0:
+            initial_rows = initial_rows[-self.episodes_per_cycle :]
+        self._current_cycle_rows = initial_rows
         self._next_checkpoint_episode = self._compute_initial_checkpoint_episode()
+        self._metrics_file = None
+        self._metrics_writer = None
 
     def _compute_initial_checkpoint_episode(self) -> int:
         if self.episodes_per_cycle <= 0:
@@ -802,6 +1032,71 @@ class CycleCheckpointCallback(BaseCallback):
 
     def _on_training_start(self) -> None:
         self.save_dir.mkdir(parents=True, exist_ok=True)
+        if self.metrics_csv_path is None:
+            return
+
+        self.metrics_csv_path.parent.mkdir(parents=True, exist_ok=True)
+        write_header = True
+        mode = "w"
+        if self.metrics_csv_path.exists():
+            mode = "a"
+            write_header = self.metrics_csv_path.stat().st_size <= 0
+
+        self._metrics_file = self.metrics_csv_path.open(mode, newline="", encoding="utf-8")
+        self._metrics_writer = csv.DictWriter(self._metrics_file, fieldnames=CHECKPOINT_METRICS_FIELDNAMES)
+        if write_header:
+            self._metrics_writer.writeheader()
+            self._metrics_file.flush()
+
+    def _on_training_end(self) -> None:
+        if self._metrics_file is not None:
+            self._metrics_file.close()
+            self._metrics_file = None
+            self._metrics_writer = None
+
+    def _write_cycle_metrics(
+        self,
+        *,
+        update_index: int,
+        model_path: Path,
+        weights_path: Path | None,
+        cycle_rows: list[dict[str, Any]],
+    ) -> tuple[float, int, int]:
+        episodes_in_cycle = len(cycle_rows)
+        success_count = int(sum(1 for row in cycle_rows if bool(row.get("success", False))))
+        success_rate = float(success_count / episodes_in_cycle) if episodes_in_cycle > 0 else 0.0
+        mean_episode_reward = (
+            float(np.mean([float(row.get("episode_reward", 0.0)) for row in cycle_rows]))
+            if cycle_rows
+            else 0.0
+        )
+        mean_episode_length = (
+            float(np.mean([int(row.get("episode_length", 0)) for row in cycle_rows]))
+            if cycle_rows
+            else 0.0
+        )
+        cycle_train_time_sec = float(sum(float(row.get("episode_train_time_sec", 0.0)) for row in cycle_rows))
+
+        if self._metrics_writer is not None and self._metrics_file is not None:
+            self._metrics_writer.writerow(
+                {
+                    "run_id": self.run_id,
+                    "update_index": int(update_index),
+                    "num_timesteps": int(self.num_timesteps),
+                    "episodes_in_cycle": int(episodes_in_cycle),
+                    "episodes_completed_total": int(self.completed_episodes),
+                    "success_count": int(success_count),
+                    "success_rate": float(success_rate),
+                    "mean_episode_reward": float(mean_episode_reward),
+                    "mean_episode_length": float(mean_episode_length),
+                    "cycle_train_time_sec": float(cycle_train_time_sec),
+                    "model_path": _relative_path_text(model_path) or "",
+                    "policy_weights_path": _relative_path_text(weights_path) or "",
+                }
+            )
+            self._metrics_file.flush()
+
+        return success_rate, success_count, episodes_in_cycle
 
     def _on_step(self) -> bool:
         if self.episodes_per_cycle <= 0:
@@ -809,10 +1104,23 @@ class CycleCheckpointCallback(BaseCallback):
 
         infos = self.locals.get("infos", [])
         for info in infos:
-            if info.get("episode") is None:
+            episode_info = info.get("episode")
+            if episode_info is None:
                 continue
+            self._current_cycle_rows.append(
+                {
+                    "success": bool(info.get("success", False)),
+                    "episode_reward": float(episode_info.get("r", 0.0)),
+                    "episode_length": int(episode_info.get("l", 0)),
+                    "episode_train_time_sec": float(info.get("episode_train_time_sec", 0.0)),
+                }
+            )
+            if len(self._current_cycle_rows) > self.episodes_per_cycle:
+                self._current_cycle_rows = self._current_cycle_rows[-self.episodes_per_cycle :]
             self.completed_episodes += 1
             while self.completed_episodes >= self._next_checkpoint_episode:
+                cycle_rows = list(self._current_cycle_rows)
+                update_index = self.next_cycle_index
                 cycle_suffix = f"_update_{self.next_cycle_index:06d}"
                 model_path, weights_path = save_training_artifacts(
                     model=self.model,
@@ -822,8 +1130,23 @@ class CycleCheckpointCallback(BaseCallback):
                     suffix=cycle_suffix,
                     save_replay_buffer=self.save_replay_buffer,
                 )
-                weights_message = f", policy weights to {weights_path}" if weights_path is not None else ""
-                print(f"Saved cycle checkpoint to {model_path}{weights_message}")
+                success_rate, success_count, episodes_in_cycle = self._write_cycle_metrics(
+                    update_index=update_index,
+                    model_path=model_path,
+                    weights_path=weights_path,
+                    cycle_rows=cycle_rows,
+                )
+                weights_message = (
+                    f", policy weights to {_relative_path_text(weights_path)}"
+                    if weights_path is not None
+                    else ""
+                )
+                print(
+                    "Saved cycle checkpoint to "
+                    f"{_relative_path_text(model_path)}{weights_message} | "
+                    f"cycle_success_rate={success_rate:.3f} ({success_count}/{episodes_in_cycle})"
+                )
+                self._current_cycle_rows.clear()
                 self.next_cycle_index += 1
                 self._next_checkpoint_episode += self.episodes_per_cycle
         return True
@@ -842,13 +1165,16 @@ class EpisodeMetricsCallback(BaseCallback):
         super().__init__(verbose=0)
         self.csv_path = csv_path
         self.run_id = run_id
-        self.scenario_path = "" if scenario_path is None else str(scenario_path)
+        self.scenario_path = "" if scenario_path is None else (_relative_path_text(scenario_path) or "")
         self.initial_episode_index = max(0, int(initial_episode_index))
         self.append = bool(append)
         self._file = None
         self._writer = None
         self._episode_counter = self.initial_episode_index
         self.completed_episodes_this_run = 0
+        self._training_start_perf = 0.0
+        self._last_episode_perf = 0.0
+        self._latest_train_loss: float | None = None
 
     def _on_training_start(self) -> None:
         self.csv_path.parent.mkdir(parents=True, exist_ok=True)
@@ -863,10 +1189,16 @@ class EpisodeMetricsCallback(BaseCallback):
         if write_header:
             self._writer.writeheader()
             self._file.flush()
+        self._training_start_perf = time.perf_counter()
+        self._last_episode_perf = self._training_start_perf
 
     def _on_step(self) -> bool:
         if self._writer is None or self._file is None:
             return True
+
+        latest_train_loss = _latest_train_loss_from_model(getattr(self, "model", None))
+        if latest_train_loss is not None:
+            self._latest_train_loss = float(latest_train_loss)
 
         infos = self.locals.get("infos", [])
         wrote_row = False
@@ -877,15 +1209,21 @@ class EpisodeMetricsCallback(BaseCallback):
 
             self._episode_counter += 1
             self.completed_episodes_this_run += 1
+            episode_wall_clock_now = time.perf_counter()
+            episode_train_time_sec = max(0.0, episode_wall_clock_now - self._last_episode_perf)
+            self._last_episode_perf = episode_wall_clock_now
+            info["episode_train_time_sec"] = float(episode_train_time_sec)
             row = {
                 "run_id": self.run_id,
-                "scenario_path": str(info.get("scenario_path", self.scenario_path) or self.scenario_path),
+                "scenario_path": _relative_path_text(info.get("scenario_path", self.scenario_path)) or "",
                 "scenario_id": str(info.get("scenario_id", "")),
                 "episode_index": int(self._episode_counter),
                 "num_timesteps": int(self.num_timesteps),
+                "train_loss": float(self._latest_train_loss) if self._latest_train_loss is not None else float("nan"),
                 "episode_reward": float(episode_info.get("r", 0.0)),
                 "episode_length": int(episode_info.get("l", 0)),
                 "episode_time_sec": float(episode_info.get("t", 0.0)),
+                "episode_train_time_sec": float(episode_train_time_sec),
                 "termination_reason": str(info.get("termination_reason", "unknown")),
                 "episode_return": float(info.get("episode_return", episode_info.get("r", 0.0))),
                 "goal_progress_ratio": float(info.get("goal_progress_ratio", 0.0)),
@@ -905,7 +1243,9 @@ class EpisodeMetricsCallback(BaseCallback):
             print(
                 "Episode "
                 f"{self._episode_counter} stopped: {row['termination_reason']} | "
-                f"reward={row['episode_reward']:.3f} | steps={row['episode_length']}"
+                f"reward={row['episode_reward']:.3f} | "
+                f"steps={row['episode_length']} | "
+                f"train_time={row['episode_train_time_sec']:.2f}s"
             )
 
         if wrote_row:
@@ -986,16 +1326,24 @@ class EpisodeArtifactCallback(BaseCallback):
                     suffix=episode_suffix,
                     save_replay_buffer=self.save_replay_buffer,
                 )
-            weights_message = f", weights to {weights_path}" if weights_path is not None else ""
+            weights_message = f", weights to {_relative_path_text(weights_path)}" if weights_path is not None else ""
             if saved_path is not None:
-                head_message = f"; head camera video to {saved_head_path}" if saved_head_path is not None else ""
+                head_message = (
+                    f"; head camera video to {_relative_path_text(saved_head_path)}"
+                    if saved_head_path is not None
+                    else ""
+                )
                 if model_path is not None:
-                    print(f"Saved episode video to {saved_path}{head_message}; checkpoint to {model_path}{weights_message}")
+                    print(
+                        "Saved episode video to "
+                        f"{_relative_path_text(saved_path)}{head_message}; "
+                        f"checkpoint to {_relative_path_text(model_path)}{weights_message}"
+                    )
                 else:
-                    print(f"Saved episode video to {saved_path}{head_message}")
+                    print(f"Saved episode video to {_relative_path_text(saved_path)}{head_message}")
             else:
                 if model_path is not None:
-                    print(f"Saved episode checkpoint to {model_path}{weights_message}")
+                    print(f"Saved episode checkpoint to {_relative_path_text(model_path)}{weights_message}")
 
         return True
 
@@ -1335,7 +1683,7 @@ def main() -> None:
     if args.algo is not None:
         config.train.algorithm = str(args.algo).lower()
     if args.log_dir is not None:
-        config.train.log_dir = str(Path(args.log_dir).resolve())
+        config.train.log_dir = Path(args.log_dir).as_posix()
     if args.model_name is not None:
         config.train.model_name = str(args.model_name)
     if args.sac_buffer_size is not None:
@@ -1344,6 +1692,8 @@ def main() -> None:
         config.train.sac_learning_starts = int(args.sac_learning_starts)
     if args.sac_train_freq_steps is not None:
         config.train.sac_train_freq_steps = int(args.sac_train_freq_steps)
+    if args.sac_train_freq_unit is not None:
+        config.train.sac_train_freq_unit = str(args.sac_train_freq_unit)
     if args.sac_gradient_steps is not None:
         config.train.sac_gradient_steps = int(args.sac_gradient_steps)
     if args.sac_tau is not None:
@@ -1378,7 +1728,7 @@ def main() -> None:
     if args.video_interval_episodes is not None:
         config.train.video_interval_episodes = args.video_interval_episodes
     if args.xml_path is not None:
-        config.env.model.xml_path = str(Path(args.xml_path).resolve())
+        config.env.model.xml_path = Path(args.xml_path).as_posix()
     if args.render and not 0 <= args.render_env_index < config.train.num_envs:
         raise ValueError(
             f"--render-env-index must be within [0, {config.train.num_envs - 1}] when --render is enabled."
@@ -1397,14 +1747,14 @@ def main() -> None:
         raise ValueError("--scenario-cycle-sample-size must be non-negative.")
     if args.use_lora and args.lora_rank <= 0:
         raise ValueError("--lora-rank must be positive when --use-lora is enabled.")
-    if args.use_lora and algo_name != "ppo":
-        raise ValueError("LoRA fine-tuning is currently only supported for PPO.")
     if config.train.sac_buffer_size <= 0:
         raise ValueError("--sac-buffer-size must be positive.")
     if config.train.sac_learning_starts < 0:
         raise ValueError("--sac-learning-starts must be non-negative.")
     if config.train.sac_train_freq_steps <= 0:
         raise ValueError("--sac-train-freq-steps must be positive.")
+    if str(config.train.sac_train_freq_unit) not in {"step", "episode"}:
+        raise ValueError("--sac-train-freq-unit must be either 'step' or 'episode'.")
     if config.train.sac_gradient_steps == 0:
         raise ValueError("--sac-gradient-steps cannot be 0.")
     if config.train.sac_tau <= 0.0 or config.train.sac_tau > 1.0:
@@ -1456,12 +1806,30 @@ def main() -> None:
         if args.video_interval_episodes is None:
             config.train.video_interval_episodes = int(rollout_episodes_per_update)
 
+    if (
+        algo_name == "sac"
+        and episode_cycle_enabled
+        and str(config.train.sac_train_freq_unit) == "episode"
+        and args.sac_train_freq_steps is None
+    ):
+        config.train.sac_train_freq_steps = int(rollout_episodes_per_update)
+
+    if args.lora_target_modules is None:
+        resolved_lora_target_modules = (
+            tuple(DEFAULT_LORA_TARGET_MODULES)
+            if algo_name == "ppo"
+            else tuple(DEFAULT_SAC_LORA_TARGET_MODULES)
+        )
+    else:
+        resolved_lora_target_modules = tuple(str(name) for name in args.lora_target_modules)
+
     log_dir = Path(config.train.log_dir)
     if scenario_path is not None:
         log_dir = log_dir / scenario_path.stem
     elif scenario_cycle_paths:
         log_dir = log_dir / "scenario_cycle"
     checkpoint_dir = log_dir / config.train.checkpoint_dirname
+    checkpoint_metrics_path = log_dir / config.train.checkpoint_metrics_filename
     episode_metrics_path = log_dir / config.train.episode_metrics_filename
     video_dir = log_dir / config.train.video_dirname
     monitor_stem = Path(config.train.monitor_filename).stem
@@ -1479,6 +1847,18 @@ def main() -> None:
     if episode_cycle_enabled:
         existing_cycle_update_index = max(existing_cycle_update_index, resume_source_update_index)
     existing_episode_count = prepare_episode_metrics_csv(episode_metrics_path, scenario_path)
+    initial_cycle_episode_rows: list[dict[str, Any]] = []
+    if (
+        episode_cycle_enabled
+        and rollout_episodes_per_update > 0
+        and bool(args.align_rollout_updates_to_episode_count)
+    ):
+        pending_cycle_episodes = existing_episode_count % rollout_episodes_per_update
+        if pending_cycle_episodes > 0:
+            initial_cycle_episode_rows = load_recent_cycle_episode_rows(
+                episode_metrics_path,
+                pending_cycle_episodes,
+            )
     convergence_history_size = max(
         int(args.convergence_window),
         2 * int(args.convergence_reward_window)
@@ -1488,9 +1868,10 @@ def main() -> None:
     initial_convergence_history = load_recent_episode_history(episode_metrics_path, convergence_history_size)
     config_payload = config_to_dict(config)
     config_payload["run_id"] = run_id
-    config_payload["monitor_path"] = str(monitor_path)
-    config_payload["episode_metrics_path"] = str(episode_metrics_path)
-    config_payload["reward_plot_path"] = str(reward_plot_path)
+    config_payload["monitor_path"] = _relative_path_text(monitor_path)
+    config_payload["episode_metrics_path"] = _relative_path_text(episode_metrics_path)
+    config_payload["checkpoint_metrics_path"] = _relative_path_text(checkpoint_metrics_path)
+    config_payload["reward_plot_path"] = _relative_path_text(reward_plot_path)
     config_payload["existing_episode_count_at_start"] = int(existing_episode_count)
     config_payload["existing_cycle_update_index_at_start"] = int(existing_cycle_update_index)
     config_payload["lora"] = {
@@ -1498,7 +1879,7 @@ def main() -> None:
         "rank": int(args.lora_rank),
         "alpha": float(args.lora_alpha),
         "dropout": float(args.lora_dropout),
-        "target_modules": list(args.lora_target_modules),
+        "target_modules": list(resolved_lora_target_modules),
         "freeze_actor_base": bool(args.lora_freeze_actor_base),
         "train_bias": bool(args.lora_train_bias),
     }
@@ -1507,6 +1888,7 @@ def main() -> None:
         "buffer_size": int(config.train.sac_buffer_size),
         "learning_starts": int(config.train.sac_learning_starts),
         "train_freq_steps": int(config.train.sac_train_freq_steps),
+        "train_freq_unit": str(config.train.sac_train_freq_unit),
         "gradient_steps": int(config.train.sac_gradient_steps),
         "tau": float(config.train.sac_tau),
         "ent_coef": _parse_auto_or_float(config.train.sac_ent_coef),
@@ -1533,15 +1915,18 @@ def main() -> None:
         "reward_stability_ratio": float(args.convergence_reward_stability_ratio),
     }
     if scenario_path is not None:
-        config_payload["selected_scenario_path"] = str(scenario_path)
+        config_payload["selected_scenario_path"] = _relative_path_text(scenario_path)
     if scenario_cycle_paths:
-        config_payload["selected_scenario_cycle_paths"] = [str(path) for path in scenario_cycle_paths]
+        config_payload["selected_scenario_cycle_paths"] = [
+            _relative_path_text(path) or ""
+            for path in scenario_cycle_paths
+        ]
     if resume_path is not None:
-        config_payload["resume_from"] = str(resume_path)
+        config_payload["resume_from"] = _relative_path_text(resume_path)
     if resume_policy_weights_path is not None:
-        config_payload["resume_policy_weights"] = str(resume_policy_weights_path)
+        config_payload["resume_policy_weights"] = _relative_path_text(resume_policy_weights_path)
     if bc_weights_path is not None:
-        config_payload["bc_weights"] = str(bc_weights_path)
+        config_payload["bc_weights"] = _relative_path_text(bc_weights_path)
     _write_json(log_dir / "config.json", config_payload)
     _write_json(run_config_path, config_payload)
 
@@ -1579,11 +1964,16 @@ def main() -> None:
             f"step budget {rollout_step_budget}"
         )
     if resume_path is not None:
-        print(f"Resuming from model: {resume_path}")
+        print(f"Resuming from model: {_relative_path_text(resume_path)}")
     if resume_policy_weights_path is not None:
-        print(f"Resuming from policy weights: {resume_policy_weights_path}")
+        print(f"Resuming from policy weights: {_relative_path_text(resume_policy_weights_path)}")
     if bc_weights_path is not None:
-        print(f"Initializing actor from BC weights: {bc_weights_path}")
+        print(f"Initializing actor from BC weights: {_relative_path_text(bc_weights_path)}")
+    if algo_name == "sac":
+        print(
+            "SAC train frequency: "
+            f"{int(config.train.sac_train_freq_steps)} {str(config.train.sac_train_freq_unit)}(s) per update trigger"
+        )
     if args.use_lora:
         print(
             "LoRA fine-tuning enabled: "
@@ -1645,29 +2035,46 @@ def main() -> None:
         algorithm_class = EpisodeCyclePPO if episode_cycle_enabled else PPO
     else:
         algorithm_class = SAC
-    policy_spec = LoraMultiInputPolicy if args.use_lora else "MultiInputPolicy"
+    if algo_name == "ppo":
+        policy_spec: str | type = LoraMultiInputPolicy if args.use_lora else "MultiInputPolicy"
+    else:
+        policy_spec = LoraSACPolicy if args.use_lora else "MultiInputPolicy"
     policy_kwargs: dict[str, Any] = {"net_arch": list(config.train.policy_hidden_sizes)}
+    if algo_name == "sac" and bc_weights_path is not None:
+        # train_bc.py saves a PPO-style actor that uses Tanh MLP activations.
+        # Match the SAC actor hidden activations before loading BC weights so the
+        # transferred policy stays behaviorally compatible instead of only shape-compatible.
+        policy_kwargs["activation_fn"] = nn.Tanh
     if args.use_lora:
         policy_kwargs.update(
             {
                 "lora_rank": int(args.lora_rank),
                 "lora_alpha": float(args.lora_alpha),
                 "lora_dropout": float(args.lora_dropout),
-                "lora_target_modules": tuple(str(name) for name in args.lora_target_modules),
+                "lora_target_modules": resolved_lora_target_modules,
                 "lora_freeze_actor_base": bool(args.lora_freeze_actor_base),
                 "lora_train_bias": bool(args.lora_train_bias),
             }
         )
 
-    direct_load_resume_allowed = resume_path is not None and not args.use_lora and (
-        algo_name == "sac" or not episode_cycle_enabled
+    direct_load_resume_allowed = resume_path is not None and (
+        algo_name == "sac" or (not args.use_lora and not episode_cycle_enabled)
     )
     if direct_load_resume_allowed:
-        model = algorithm_class.load(
-            str(resume_path),
-            env=env,
-            device=requested_device,
-        )
+        if algo_name == "sac" and torch.device(requested_device).type == "cuda":
+            model = SAC.load(
+                str(resume_path),
+                env=env,
+                device="cpu",
+            )
+            _move_sac_model_to_device(model, requested_device)
+            print(f"Loaded SAC checkpoint on CPU and moved it to {requested_device}.")
+        else:
+            model = algorithm_class.load(
+                str(resume_path),
+                env=env,
+                device=requested_device,
+            )
         print(f"Loaded model with existing num_timesteps={int(model.num_timesteps)}")
         replay_buffer_path = load_replay_buffer_if_available(model, resume_path)
         if replay_buffer_path is not None:
@@ -1705,7 +2112,7 @@ def main() -> None:
                 model_kwargs["post_update_initial_iteration"] = int(existing_cycle_update_index)
         else:
             model_kwargs = {
-                "policy": "MultiInputPolicy",
+                "policy": policy_spec,
                 "env": env,
                 "learning_rate": config.train.learning_rate,
                 "buffer_size": int(config.train.sac_buffer_size),
@@ -1713,12 +2120,12 @@ def main() -> None:
                 "batch_size": config.train.batch_size,
                 "tau": float(config.train.sac_tau),
                 "gamma": config.train.gamma,
-                "train_freq": (int(config.train.sac_train_freq_steps), "step"),
+                "train_freq": (int(config.train.sac_train_freq_steps), str(config.train.sac_train_freq_unit)),
                 "gradient_steps": int(config.train.sac_gradient_steps),
                 "ent_coef": _parse_auto_or_float(config.train.sac_ent_coef),
                 "target_update_interval": int(config.train.sac_target_update_interval),
                 "target_entropy": _parse_auto_or_float(config.train.sac_target_entropy),
-                "policy_kwargs": {"net_arch": list(config.train.policy_hidden_sizes)},
+                "policy_kwargs": dict(policy_kwargs),
                 "verbose": 1,
                 "seed": config.train.seed,
                 "device": requested_device,
@@ -1787,13 +2194,16 @@ def main() -> None:
         callback_list.append(
             CycleCheckpointCallback(
                 save_dir=checkpoint_dir,
+                metrics_csv_path=checkpoint_metrics_path,
                 model_name=config.train.model_name,
+                run_id=run_id,
                 save_policy_weights=config.train.save_policy_weights,
                 save_replay_buffer=algo_name == "sac",
                 episodes_per_cycle=int(rollout_episodes_per_update),
                 initial_episode_count=existing_episode_count,
                 initial_cycle_index=existing_cycle_update_index,
                 align_to_episode_count=bool(args.align_rollout_updates_to_episode_count),
+                initial_cycle_episode_rows=initial_cycle_episode_rows,
             )
         )
     if args.plot_reward:
@@ -1862,12 +2272,15 @@ def main() -> None:
             save_replay_buffer=algo_name == "sac",
         )
         weights_message = (
-            f", interrupted policy weights to {latest_weights_path}"
+            f", interrupted policy weights to {_relative_path_text(latest_weights_path)}"
             if latest_weights_path is not None
             else ""
         )
         stop_reason = "keyboard_interrupt"
-        print(f"Training interrupted. Saved interrupted model to {latest_model_path}{weights_message}")
+        print(
+            "Training interrupted. Saved interrupted model to "
+            f"{_relative_path_text(latest_model_path)}{weights_message}"
+        )
     else:
         latest_model_path, latest_weights_path = save_training_artifacts(
             model=model,
@@ -1884,29 +2297,34 @@ def main() -> None:
             suffix=f"_{run_id}",
             save_replay_buffer=algo_name == "sac",
         )
-        weights_message = f", policy weights to {latest_weights_path}" if latest_weights_path is not None else ""
+        weights_message = (
+            f", policy weights to {_relative_path_text(latest_weights_path)}"
+            if latest_weights_path is not None
+            else ""
+        )
         if convergence_callback is not None and convergence_callback.converged:
             stop_reason = "convergence"
         elif stop_after_episodes_callback.stopped_due_to_limit:
             stop_reason = "max_episodes"
-        print(f"Saved model to {latest_model_path}{weights_message}")
+        print(f"Saved model to {_relative_path_text(latest_model_path)}{weights_message}")
     finally:
         env.close()
 
     training_summary = {
         "run_id": run_id,
         "algorithm": algo_name,
-        "scenario_path": None if scenario_path is None else str(scenario_path),
-        "scenario_cycle_paths": None if not scenario_cycle_paths else [str(path) for path in scenario_cycle_paths],
-        "resume_from": None if resume_path is None else str(resume_path),
-        "resume_policy_weights": None if resume_policy_weights_path is None else str(resume_policy_weights_path),
-        "bc_weights": None if bc_weights_path is None else str(bc_weights_path),
+        "scenario_path": _relative_path_text(scenario_path),
+        "scenario_cycle_paths": None if not scenario_cycle_paths else [_relative_path_text(path) for path in scenario_cycle_paths],
+        "resume_from": _relative_path_text(resume_path),
+        "resume_policy_weights": _relative_path_text(resume_policy_weights_path),
+        "bc_weights": _relative_path_text(bc_weights_path),
         "device": requested_device,
-        "log_dir": str(log_dir),
-        "checkpoint_dir": str(checkpoint_dir),
-        "video_dir": str(video_dir),
-        "monitor_path": str(monitor_path),
-        "episode_metrics_path": str(episode_metrics_path),
+        "log_dir": _relative_path_text(log_dir),
+        "checkpoint_dir": _relative_path_text(checkpoint_dir),
+        "video_dir": _relative_path_text(video_dir),
+        "monitor_path": _relative_path_text(monitor_path),
+        "episode_metrics_path": _relative_path_text(episode_metrics_path),
+        "checkpoint_metrics_path": _relative_path_text(checkpoint_metrics_path),
         "existing_episode_count_at_start": int(existing_episode_count),
         "existing_cycle_update_index_at_start": int(existing_cycle_update_index),
         "episodes_completed_this_run": int(episode_metrics_callback.completed_episodes_this_run),
@@ -1922,6 +2340,7 @@ def main() -> None:
             "buffer_size": int(config.train.sac_buffer_size),
             "learning_starts": int(config.train.sac_learning_starts),
             "train_freq_steps": int(config.train.sac_train_freq_steps),
+            "train_freq_unit": str(config.train.sac_train_freq_unit),
             "gradient_steps": int(config.train.sac_gradient_steps),
             "tau": float(config.train.sac_tau),
             "ent_coef": _parse_auto_or_float(config.train.sac_ent_coef),
@@ -1932,10 +2351,10 @@ def main() -> None:
         "converged": bool(convergence_callback.converged) if convergence_callback is not None else False,
         "convergence_summary": None if convergence_callback is None else convergence_callback.summary,
         "latest_window_summary": None if convergence_callback is None else convergence_callback.latest_window_summary,
-        "latest_model_path": None if latest_model_path is None else str(latest_model_path),
-        "latest_policy_weights_path": None if latest_weights_path is None else str(latest_weights_path),
-        "archived_model_path": None if archived_model_path is None else str(archived_model_path),
-        "archived_policy_weights_path": None if archived_weights_path is None else str(archived_weights_path),
+        "latest_model_path": _relative_path_text(latest_model_path),
+        "latest_policy_weights_path": _relative_path_text(latest_weights_path),
+        "archived_model_path": _relative_path_text(archived_model_path),
+        "archived_policy_weights_path": _relative_path_text(archived_weights_path),
     }
     _write_json(latest_summary_path, training_summary)
     _write_json(run_summary_path, training_summary)

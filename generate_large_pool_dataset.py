@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 from copy import deepcopy
 from pathlib import Path
 
@@ -24,7 +25,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--output-root",
         type=str,
-        default=str((PROJECT_ROOT / "scenarios" / "large_pool_dataset_200").resolve()),
+        default=(Path("scenarios") / "large_pool_dataset_200").as_posix(),
         help="Root directory for the generated dataset.",
     )
     parser.add_argument("--train-base-seed", type=int, default=1000, help="Base RNG seed for training scenarios.")
@@ -52,6 +53,16 @@ def parse_args() -> argparse.Namespace:
         help="Maximum scenario resampling attempts before giving up on one scenario.",
     )
     return parser.parse_args()
+
+
+def _relative_posix(path: Path, *, start: Path) -> str:
+    return Path(os.path.relpath(path.resolve(), start.resolve())).as_posix()
+
+
+def _project_path_to_manifest_relative(path_text: str, *, manifest_root: Path) -> str:
+    path = Path(path_text)
+    resolved = path.resolve() if path.is_absolute() else (PROJECT_ROOT / path).resolve()
+    return _relative_posix(resolved, start=manifest_root)
 
 
 def build_dataset_config(args: argparse.Namespace):
@@ -134,8 +145,8 @@ def generate_split(
                     "split": split_name,
                     "source_seed": scenario_seed,
                     "obstacle_count": len(scenario.obstacles),
-                    "json_path": str(scenario_path),
-                    "topdown_path": str(preview_path),
+                    "json_path": _relative_posix(scenario_path, start=split_root),
+                    "topdown_path": _relative_posix(preview_path, start=split_root),
                 }
             )
             print(
@@ -192,13 +203,21 @@ def main() -> None:
     dataset_manifest = {
         "train_count": len(train_entries),
         "test_count": len(test_entries),
-        "output_root": str(output_root),
+        "output_root": ".",
         "config": config_to_dict(config),
         "splits": {
-            "train_manifest": str((output_root / "train" / "manifest.json").resolve()),
-            "test_manifest": str((output_root / "test" / "manifest.json").resolve()),
+            "train_manifest": _relative_posix(output_root / "train" / "manifest.json", start=output_root),
+            "test_manifest": _relative_posix(output_root / "test" / "manifest.json", start=output_root),
         },
     }
+    dataset_manifest["config"]["env"]["model"]["xml_path"] = _project_path_to_manifest_relative(
+        str(dataset_manifest["config"]["env"]["model"]["xml_path"]),
+        manifest_root=output_root,
+    )
+    dataset_manifest["config"]["train"]["log_dir"] = _project_path_to_manifest_relative(
+        str(dataset_manifest["config"]["train"]["log_dir"]),
+        manifest_root=output_root,
+    )
     dataset_manifest_path = output_root / "dataset_manifest.json"
     with dataset_manifest_path.open("w", encoding="utf-8") as handle:
         json.dump(dataset_manifest, handle, indent=2, ensure_ascii=False)

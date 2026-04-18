@@ -1,11 +1,11 @@
 {
   "train_count": 100,
   "test_count": 100,
-  "output_root": "G:\\Code\\Python\\RL_fish\\scenarios\\large_pool_dataset_200",
+  "output_root": ".",
   "config": {
     "env": {
       "model": {
-        "xml_path": "G:\\Code\\Python\\RL_fish\\model\\fish_pool_scene.xml"
+        "xml_path": "../../model/fish_pool_scene.xml"
       },
       "camera": {
         "camera_name": "head_camera",
@@ -139,7 +139,7 @@
         128
       ],
       "seed": 7,
-      "log_dir": "G:\\Code\\Python\\RL_fish\\runs\\ppo_fish_baseline",
+      "log_dir": "../../runs/ppo_fish_baseline",
       "model_name": "ppo_fish_baseline",
       "checkpoint_interval_timesteps": 0,
       "checkpoint_dirname": "checkpoints",
@@ -161,7 +161,7 @@
     }
   },
   "splits": {
-    "train_manifest": "G:\\Code\\Python\\RL_fish\\scenarios\\large_pool_dataset_200\\train\\manifest.json",
-    "test_manifest": "G:\\Code\\Python\\RL_fish\\scenarios\\large_pool_dataset_200\\test\\manifest.json"
+    "train_manifest": "train/manifest.json",
+    "test_manifest": "test/manifest.json"
   }
 }

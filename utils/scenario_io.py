@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
@@ -9,6 +10,22 @@ from typing import Any
 import numpy as np
 
 from utils.obstacles import CircularObstacle
+
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+
+PATH_FIELD_NAMES = frozenset(
+    {
+        "output_root",
+        "train_manifest",
+        "test_manifest",
+        "json_path",
+        "topdown_path",
+        "path",
+        "xml_path",
+        "log_dir",
+    }
+)
 
 
 @dataclass
@@ -73,6 +90,33 @@ def load_fixed_scenario(input_path: str | Path) -> FixedScenario:
     return fixed_scenario_from_dict(data)
 
 
+def _normalize_path_text(value: str, *, base_dir: Path) -> str:
+    text = str(value).strip()
+    if not text:
+        return text
+
+    path = Path(text)
+    resolved = (base_dir / path).resolve() if not path.is_absolute() else path.resolve()
+    try:
+        return Path(os.path.relpath(resolved, PROJECT_ROOT)).as_posix()
+    except ValueError:
+        return resolved.as_posix()
+
+
+def _normalize_manifest_paths(payload: Any, *, base_dir: Path) -> Any:
+    if isinstance(payload, dict):
+        normalized: dict[str, Any] = {}
+        for key, value in payload.items():
+            if key in PATH_FIELD_NAMES and isinstance(value, str):
+                normalized[key] = _normalize_path_text(value, base_dir=base_dir)
+            else:
+                normalized[key] = _normalize_manifest_paths(value, base_dir=base_dir)
+        return normalized
+    if isinstance(payload, list):
+        return [_normalize_manifest_paths(item, base_dir=base_dir) for item in payload]
+    return payload
+
+
 @lru_cache(maxsize=None)
 def load_dataset_env_config_for_scenario(scenario_path: str | Path) -> dict[str, Any] | None:
     path = Path(scenario_path).resolve()
@@ -81,7 +125,7 @@ def load_dataset_env_config_for_scenario(scenario_path: str | Path) -> dict[str,
         if not manifest_path.exists():
             continue
         with manifest_path.open("r", encoding="utf-8") as handle:
-            manifest = json.load(handle)
+            manifest = _normalize_manifest_paths(json.load(handle), base_dir=manifest_path.parent)
         env_config = manifest.get("config", {}).get("env")
         if isinstance(env_config, dict):
             return env_config

@@ -4,102 +4,102 @@
     {
       "scenario_id": "training_env_01",
       "source_seed": 7,
-      "path": "G:\\Code\\Python\\RL_fish\\scenarios\\training_envs\\training_env_01.json"
+      "path": "training_env_01.json"
     },
     {
       "scenario_id": "training_env_02",
       "source_seed": 8,
-      "path": "G:\\Code\\Python\\RL_fish\\scenarios\\training_envs\\training_env_02.json"
+      "path": "training_env_02.json"
     },
     {
       "scenario_id": "training_env_03",
       "source_seed": 9,
-      "path": "G:\\Code\\Python\\RL_fish\\scenarios\\training_envs\\training_env_03.json"
+      "path": "training_env_03.json"
     },
     {
       "scenario_id": "training_env_04",
       "source_seed": 10,
-      "path": "G:\\Code\\Python\\RL_fish\\scenarios\\training_envs\\training_env_04.json"
+      "path": "training_env_04.json"
     },
     {
       "scenario_id": "training_env_05",
       "source_seed": 11,
-      "path": "G:\\Code\\Python\\RL_fish\\scenarios\\training_envs\\training_env_05.json"
+      "path": "training_env_05.json"
     },
     {
       "scenario_id": "training_env_06",
       "source_seed": 12,
-      "path": "G:\\Code\\Python\\RL_fish\\scenarios\\training_envs\\training_env_06.json"
+      "path": "training_env_06.json"
     },
     {
       "scenario_id": "training_env_07",
       "source_seed": 13,
-      "path": "G:\\Code\\Python\\RL_fish\\scenarios\\training_envs\\training_env_07.json"
+      "path": "training_env_07.json"
     },
     {
       "scenario_id": "training_env_08",
       "source_seed": 14,
-      "path": "G:\\Code\\Python\\RL_fish\\scenarios\\training_envs\\training_env_08.json"
+      "path": "training_env_08.json"
     },
     {
       "scenario_id": "training_env_09",
       "source_seed": 15,
-      "path": "G:\\Code\\Python\\RL_fish\\scenarios\\training_envs\\training_env_09.json"
+      "path": "training_env_09.json"
     },
     {
       "scenario_id": "training_env_10",
       "source_seed": 16,
-      "path": "G:\\Code\\Python\\RL_fish\\scenarios\\training_envs\\training_env_10.json"
+      "path": "training_env_10.json"
     },
     {
       "scenario_id": "training_env_11",
       "source_seed": 17,
-      "path": "G:\\Code\\Python\\RL_fish\\scenarios\\training_envs\\training_env_11.json"
+      "path": "training_env_11.json"
     },
     {
       "scenario_id": "training_env_12",
       "source_seed": 18,
-      "path": "G:\\Code\\Python\\RL_fish\\scenarios\\training_envs\\training_env_12.json"
+      "path": "training_env_12.json"
     },
     {
       "scenario_id": "training_env_13",
       "source_seed": 19,
-      "path": "G:\\Code\\Python\\RL_fish\\scenarios\\training_envs\\training_env_13.json"
+      "path": "training_env_13.json"
     },
     {
       "scenario_id": "training_env_14",
       "source_seed": 20,
-      "path": "G:\\Code\\Python\\RL_fish\\scenarios\\training_envs\\training_env_14.json"
+      "path": "training_env_14.json"
     },
     {
       "scenario_id": "training_env_15",
       "source_seed": 21,
-      "path": "G:\\Code\\Python\\RL_fish\\scenarios\\training_envs\\training_env_15.json"
+      "path": "training_env_15.json"
     },
     {
       "scenario_id": "training_env_16",
       "source_seed": 22,
-      "path": "G:\\Code\\Python\\RL_fish\\scenarios\\training_envs\\training_env_16.json"
+      "path": "training_env_16.json"
     },
     {
       "scenario_id": "training_env_17",
       "source_seed": 23,
-      "path": "G:\\Code\\Python\\RL_fish\\scenarios\\training_envs\\training_env_17.json"
+      "path": "training_env_17.json"
     },
     {
       "scenario_id": "training_env_18",
       "source_seed": 24,
-      "path": "G:\\Code\\Python\\RL_fish\\scenarios\\training_envs\\training_env_18.json"
+      "path": "training_env_18.json"
     },
     {
       "scenario_id": "training_env_19",
       "source_seed": 25,
-      "path": "G:\\Code\\Python\\RL_fish\\scenarios\\training_envs\\training_env_19.json"
+      "path": "training_env_19.json"
     },
     {
       "scenario_id": "training_env_20",
       "source_seed": 26,
-      "path": "G:\\Code\\Python\\RL_fish\\scenarios\\training_envs\\training_env_20.json"
+      "path": "training_env_20.json"
     }
   ]
 }

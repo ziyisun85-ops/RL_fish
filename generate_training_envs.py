@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 from pathlib import Path
 
-from configs.default_config import PROJECT_ROOT, make_config
+from configs.default_config import make_config
 from envs import FishPathAvoidEnv
 from utils.scenario_io import save_fixed_scenario
 
@@ -15,11 +16,15 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--output-dir",
         type=str,
-        default=str((PROJECT_ROOT / "scenarios" / "training_envs").resolve()),
+        default=(Path("scenarios") / "training_envs").as_posix(),
         help="Directory where the exported environment JSON files will be written.",
     )
     parser.add_argument("--base-seed", type=int, default=7, help="Base RNG seed used to generate the environments.")
     return parser.parse_args()
+
+
+def _relative_posix(path: Path, *, start: Path) -> str:
+    return Path(os.path.relpath(path.resolve(), start.resolve())).as_posix()
 
 
 def main() -> None:
@@ -48,7 +53,7 @@ def main() -> None:
             {
                 "scenario_id": scenario_name,
                 "source_seed": scenario_seed,
-                "path": str(output_path),
+                "path": _relative_posix(output_path, start=output_dir),
             }
         )
         print(f"Saved {scenario_name} to {output_path}")
