@@ -1,0 +1,17 @@
+{
+  "device": "cuda",
+  "scenario_path": "G:\\Code\\Python\\RL_fish\\scenarios\\large_pool_dataset_200\\test\\json\\test_env_001.json",
+  "episodes": 5,
+  "policies": {
+    "ppo_scratch": {
+      "episodes": 5,
+      "avg_reward": -6255.841065674943,
+      "avg_episode_length": 1796.0,
+      "success_rate": 0.4,
+      "collision_rate": 0.6,
+      "timeout_rate": 0.0,
+      "avg_goal_progress_ratio": 0.4825361516085479,
+      "avg_abs_cross_track_error": 0.1874175690538358
+    }
+  }
+}

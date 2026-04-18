@@ -1,0 +1,30 @@
+{
+  "bc_weights": "G:\\Code\\Python\\RL_fish\\runs\\bc_pretrain\\large_pool_bc_v2\\checkpoints\\bc_large_pool_v2_epoch020_actor.pth",
+  "device": "cpu",
+  "episodes": 1,
+  "seed": 7,
+  "xml_path": "G:\\Code\\Python\\RL_fish\\model\\fish_pool_scene.xml",
+  "sort_order": [
+    "success_rate desc",
+    "avg_reward desc",
+    "avg_goal_progress_ratio desc",
+    "collision_rate asc",
+    "timeout_rate asc",
+    "scenario_stem asc"
+  ],
+  "scenarios": [
+    {
+      "scenario_path": "G:\\Code\\Python\\RL_fish\\scenarios\\large_pool_dataset_200\\test\\json\\test_env_010.json",
+      "scenario_stem": "test_env_010",
+      "episodes": 1,
+      "avg_reward": -6405.880286864916,
+      "avg_episode_length": 2639.0,
+      "success_rate": 1.0,
+      "collision_rate": 0.0,
+      "timeout_rate": 0.0,
+      "avg_goal_progress_ratio": 0.945440330795451,
+      "avg_abs_cross_track_error": 0.5603162940274864,
+      "rank": 1
+    }
+  ]
+}

@@ -241,6 +241,9 @@ class FishPathAvoidEnv(gym.Env):
         self.goal_target = self.goal_center.copy()
         self.goal_distance = math.inf
         self.goal_progress_ratio = 0.0
+        self.avg_goal_progress_ratio = 0.0
+        self._goal_progress_ratio_sum = 0.0
+        self._goal_progress_ratio_step_count = 0
         self.initial_goal_distance = 1.0
         self.local_obstacle_obs = LocalObstacleObservation.empty()
         self.visual_obstacle_obs = VisualObstacleObservation.empty(self.config.camera.visibility_distance)
@@ -251,6 +254,10 @@ class FishPathAvoidEnv(gym.Env):
         self.goal_reached_step: int | None = None
         self.collided = False
         self.wall_collision = False
+        self.obstacle_collision_count = 0
+        self.wall_collision_count = 0
+        self._obstacle_collision_active = False
+        self._wall_collision_active = False
         self.out_of_bounds = False
         self.timeout = False
         self.persistent_contact_steps = 0
@@ -1035,6 +1042,10 @@ class FishPathAvoidEnv(gym.Env):
         self.goal_reached_step = None
         self.collided = False
         self.wall_collision = False
+        self.obstacle_collision_count = 0
+        self.wall_collision_count = 0
+        self._obstacle_collision_active = False
+        self._wall_collision_active = False
         self.out_of_bounds = False
         self.timeout = False
         self.persistent_contact_steps = 0
@@ -1069,6 +1080,9 @@ class FishPathAvoidEnv(gym.Env):
         self.prev_lateral_speed = self.lateral_speed
         self.initial_goal_distance = max(self.goal_distance, 1e-6)
         self.goal_progress_ratio = 0.0
+        self.avg_goal_progress_ratio = 0.0
+        self._goal_progress_ratio_sum = 0.0
+        self._goal_progress_ratio_step_count = 0
         self._sync_mujoco_viewer(reset_timing=True)
         next_episode_index = self.episode_count + 1
         self._record_current_episode = bool(
@@ -1137,6 +1151,7 @@ class FishPathAvoidEnv(gym.Env):
         self._capture_episode_frame()
         terminated = self._check_terminated()
         truncated = self._check_truncated()
+        self._update_episode_statistics()
         reward, reward_terms = self._get_reward(
             prev_goal_distance,
             prev_visual_obstacle_obs,
@@ -1351,6 +1366,23 @@ class FishPathAvoidEnv(gym.Env):
             return "out_of_bounds"
         return "running"
 
+    def _update_episode_statistics(self) -> None:
+        self._goal_progress_ratio_sum += float(self.goal_progress_ratio)
+        self._goal_progress_ratio_step_count += 1
+        self.avg_goal_progress_ratio = float(
+            self._goal_progress_ratio_sum / max(self._goal_progress_ratio_step_count, 1)
+        )
+
+        obstacle_collision_active = bool(self.collided)
+        if obstacle_collision_active and not self._obstacle_collision_active:
+            self.obstacle_collision_count += 1
+        self._obstacle_collision_active = obstacle_collision_active
+
+        wall_collision_active = bool(self.wall_collision)
+        if wall_collision_active and not self._wall_collision_active:
+            self.wall_collision_count += 1
+        self._wall_collision_active = wall_collision_active
+
     def _sample_obstacles(self) -> list[CircularObstacle]:
         return sample_circular_obstacles(
             obstacle_config=self.config.obstacle,
@@ -1386,6 +1418,7 @@ class FishPathAvoidEnv(gym.Env):
             "termination_reason": self._termination_reason(),
             "episode_return": self.episode_return,
             "goal_progress_ratio": self.goal_progress_ratio,
+            "avg_goal_progress_ratio": self.avg_goal_progress_ratio,
             "path_progress_ratio": self.goal_progress_ratio,
             "distance_to_goal_region": self.goal_distance,
             "goal_target_x": float(self.goal_target[0]),
@@ -1416,6 +1449,8 @@ class FishPathAvoidEnv(gym.Env):
             "success": self.reached_goal,
             "collision": self.collided,
             "wall_collision": self.wall_collision,
+            "obstacle_collision_count": int(self.obstacle_collision_count),
+            "wall_collision_count": int(self.wall_collision_count),
             "persistent_contact_steps": int(self.persistent_contact_steps),
             "persistent_contact_failure": self.persistent_contact_failure,
             "out_of_bounds": self.out_of_bounds,

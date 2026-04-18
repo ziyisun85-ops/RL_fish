@@ -1,0 +1,2 @@
+rank,scenario_stem,scenario_path,episodes,avg_reward,avg_episode_length,success_rate,collision_rate,timeout_rate,avg_goal_progress_ratio,avg_abs_cross_track_error
+1,test_env_010,G:\Code\Python\RL_fish\scenarios\large_pool_dataset_200\test\json\test_env_010.json,1,-6405.880286864916,2639.0,1.0,0.0,0.0,0.945440330795451,0.5603162940274864

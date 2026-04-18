@@ -1,0 +1,17 @@
+{
+  "device": "cuda",
+  "scenario_path": "G:\\Code\\Python\\RL_fish\\scenarios\\large_pool_dataset_200\\test\\json\\test_env_010.json",
+  "episodes": 20,
+  "policies": {
+    "bc_actor": {
+      "episodes": 20,
+      "avg_reward": -3724.7943181601304,
+      "avg_episode_length": 2952.3,
+      "success_rate": 0.75,
+      "collision_rate": 0.25,
+      "timeout_rate": 0.0,
+      "avg_goal_progress_ratio": 0.8167068658135699,
+      "avg_abs_cross_track_error": 0.2818775463569353
+    }
+  }
+}

@@ -1,0 +1,456 @@
+{
+  "metric_definition": "avg_goal_progress_ratio from final episode info, averaged over 5 episodes per scene and then averaged over test_env_001..020",
+  "u025_live_eval": {
+    "weight_path": "G:\\Code\\Python\\RL_fish\\runs\\ppo_fish_baseline\\scenario_cycle\\checkpoints\\ppo_fish_baseline_update_000025_policy.pth",
+    "device": "cuda",
+    "scene_count": 20,
+    "episodes_per_scene": 5,
+    "overall": {
+      "avg_reward": -4230.604938429776,
+      "avg_episode_length": 2249.5199999999995,
+      "success_rate": 0.48,
+      "collision_rate": 0.52,
+      "timeout_rate": 0.0,
+      "avg_goal_progress_ratio": 0.7119266262744172,
+      "avg_abs_cross_track_error": 0.6334338147740579
+    },
+    "per_scene": [
+      {
+        "scene_name": "test_env_001.json",
+        "avg_reward": -4073.604584183312,
+        "avg_episode_length": 2947.8,
+        "success_rate": 1.0,
+        "collision_rate": 0.0,
+        "timeout_rate": 0.0,
+        "avg_goal_progress_ratio": 0.9549733462797164,
+        "avg_abs_cross_track_error": 0.5547395847304762
+      },
+      {
+        "scene_name": "test_env_002.json",
+        "avg_reward": -6479.8941322866785,
+        "avg_episode_length": 1513.0,
+        "success_rate": 0.0,
+        "collision_rate": 1.0,
+        "timeout_rate": 0.0,
+        "avg_goal_progress_ratio": 0.46687322345006155,
+        "avg_abs_cross_track_error": 1.156954656439136
+      },
+      {
+        "scene_name": "test_env_003.json",
+        "avg_reward": 535.6185529090343,
+        "avg_episode_length": 2928.2,
+        "success_rate": 1.0,
+        "collision_rate": 0.0,
+        "timeout_rate": 0.0,
+        "avg_goal_progress_ratio": 0.9548225146976439,
+        "avg_abs_cross_track_error": 0.32676985665800345
+      },
+      {
+        "scene_name": "test_env_004.json",
+        "avg_reward": -2898.8871204416855,
+        "avg_episode_length": 738.8,
+        "success_rate": 0.0,
+        "collision_rate": 1.0,
+        "timeout_rate": 0.0,
+        "avg_goal_progress_ratio": 0.25346039974387136,
+        "avg_abs_cross_track_error": 0.5176337454809892
+      },
+      {
+        "scene_name": "test_env_005.json",
+        "avg_reward": -2866.010358955899,
+        "avg_episode_length": 2004.6,
+        "success_rate": 0.6,
+        "collision_rate": 0.4,
+        "timeout_rate": 0.0,
+        "avg_goal_progress_ratio": 0.712856509453917,
+        "avg_abs_cross_track_error": 0.46675748952392776
+      },
+      {
+        "scene_name": "test_env_006.json",
+        "avg_reward": -2700.1875174979227,
+        "avg_episode_length": 531.6,
+        "success_rate": 0.0,
+        "collision_rate": 1.0,
+        "timeout_rate": 0.0,
+        "avg_goal_progress_ratio": 0.1630214200581512,
+        "avg_abs_cross_track_error": 0.24914363080410692
+      },
+      {
+        "scene_name": "test_env_007.json",
+        "avg_reward": -1895.1760987860077,
+        "avg_episode_length": 2569.8,
+        "success_rate": 0.8,
+        "collision_rate": 0.2,
+        "timeout_rate": 0.0,
+        "avg_goal_progress_ratio": 0.8767777359201332,
+        "avg_abs_cross_track_error": 0.36859509591692924
+      },
+      {
+        "scene_name": "test_env_008.json",
+        "avg_reward": -11359.01523376799,
+        "avg_episode_length": 2737.8,
+        "success_rate": 0.0,
+        "collision_rate": 1.0,
+        "timeout_rate": 0.0,
+        "avg_goal_progress_ratio": 0.7060525060236806,
+        "avg_abs_cross_track_error": 1.2757212676499499
+      },
+      {
+        "scene_name": "test_env_009.json",
+        "avg_reward": -9764.947252760669,
+        "avg_episode_length": 1560.2,
+        "success_rate": 0.0,
+        "collision_rate": 1.0,
+        "timeout_rate": 0.0,
+        "avg_goal_progress_ratio": 0.4435239679614248,
+        "avg_abs_cross_track_error": 0.4778159980632431
+      },
+      {
+        "scene_name": "test_env_010.json",
+        "avg_reward": -4428.202842842076,
+        "avg_episode_length": 2311.4,
+        "success_rate": 0.6,
+        "collision_rate": 0.4,
+        "timeout_rate": 0.0,
+        "avg_goal_progress_ratio": 0.7875747547284468,
+        "avg_abs_cross_track_error": 0.45656778108123275
+      },
+      {
+        "scene_name": "test_env_011.json",
+        "avg_reward": -3968.9187373319646,
+        "avg_episode_length": 2043.0,
+        "success_rate": 0.4,
+        "collision_rate": 0.6,
+        "timeout_rate": 0.0,
+        "avg_goal_progress_ratio": 0.6571939441908639,
+        "avg_abs_cross_track_error": 0.5752580129472753
+      },
+      {
+        "scene_name": "test_env_012.json",
+        "avg_reward": 231.22769631713922,
+        "avg_episode_length": 2953.0,
+        "success_rate": 1.0,
+        "collision_rate": 0.0,
+        "timeout_rate": 0.0,
+        "avg_goal_progress_ratio": 0.9550363189985038,
+        "avg_abs_cross_track_error": 0.2325894016003168
+      },
+      {
+        "scene_name": "test_env_013.json",
+        "avg_reward": -4520.988747232357,
+        "avg_episode_length": 1913.6,
+        "success_rate": 0.4,
+        "collision_rate": 0.6,
+        "timeout_rate": 0.0,
+        "avg_goal_progress_ratio": 0.573217966771794,
+        "avg_abs_cross_track_error": 0.5512228637304626
+      },
+      {
+        "scene_name": "test_env_014.json",
+        "avg_reward": 2126.0172841405188,
+        "avg_episode_length": 2667.8,
+        "success_rate": 1.0,
+        "collision_rate": 0.0,
+        "timeout_rate": 0.0,
+        "avg_goal_progress_ratio": 0.9525997038448439,
+        "avg_abs_cross_track_error": 0.5184621753086068
+      },
+      {
+        "scene_name": "test_env_015.json",
+        "avg_reward": -1303.1810996065692,
+        "avg_episode_length": 2811.6,
+        "success_rate": 0.8,
+        "collision_rate": 0.2,
+        "timeout_rate": 0.0,
+        "avg_goal_progress_ratio": 0.9226124519195782,
+        "avg_abs_cross_track_error": 0.12044322533536918
+      },
+      {
+        "scene_name": "test_env_016.json",
+        "avg_reward": -898.4614563347241,
+        "avg_episode_length": 2373.6,
+        "success_rate": 0.8,
+        "collision_rate": 0.2,
+        "timeout_rate": 0.0,
+        "avg_goal_progress_ratio": 0.8055046219779676,
+        "avg_abs_cross_track_error": 0.47039460680334066
+      },
+      {
+        "scene_name": "test_env_017.json",
+        "avg_reward": -10029.05708388848,
+        "avg_episode_length": 2867.2,
+        "success_rate": 0.0,
+        "collision_rate": 1.0,
+        "timeout_rate": 0.0,
+        "avg_goal_progress_ratio": 0.7600726654816884,
+        "avg_abs_cross_track_error": 1.1364157282402516
+      },
+      {
+        "scene_name": "test_env_018.json",
+        "avg_reward": -5437.210874890262,
+        "avg_episode_length": 2357.6,
+        "success_rate": 0.2,
+        "collision_rate": 0.8,
+        "timeout_rate": 0.0,
+        "avg_goal_progress_ratio": 0.7581302677534847,
+        "avg_abs_cross_track_error": 0.838283828978182
+      },
+      {
+        "scene_name": "test_env_019.json",
+        "avg_reward": -1318.335355482414,
+        "avg_episode_length": 2688.6,
+        "success_rate": 1.0,
+        "collision_rate": 0.0,
+        "timeout_rate": 0.0,
+        "avg_goal_progress_ratio": 0.9517390788034227,
+        "avg_abs_cross_track_error": 0.46764756550947056
+      },
+      {
+        "scene_name": "test_env_020.json",
+        "avg_reward": -13562.883805673195,
+        "avg_episode_length": 2471.2,
+        "success_rate": 0.0,
+        "collision_rate": 1.0,
+        "timeout_rate": 0.0,
+        "avg_goal_progress_ratio": 0.582489127429149,
+        "avg_abs_cross_track_error": 1.907259780679889
+      }
+    ]
+  },
+  "u037_historical_eval": {
+    "source_dir": "G:\\Code\\Python\\RL_fish\\runs\\eval\\ppo_rand20_u037_test001_020_ep5_cuda",
+    "scene_count": 20,
+    "episodes_per_scene": 5,
+    "overall": {
+      "avg_reward": -5383.638867938628,
+      "avg_episode_length": 2615.479999999999,
+      "success_rate": 0.43000000000000005,
+      "collision_rate": 0.5700000000000001,
+      "timeout_rate": 0.01,
+      "avg_goal_progress_ratio": 0.7057159247869552,
+      "avg_abs_cross_track_error": 0.741291347590466
+    },
+    "per_scene": [
+      {
+        "scene_name": "test_env_001.json",
+        "episodes": 5,
+        "avg_reward": -6255.841065674943,
+        "avg_episode_length": 1796.0,
+        "success_rate": 0.4,
+        "collision_rate": 0.6,
+        "timeout_rate": 0.0,
+        "avg_goal_progress_ratio": 0.4825361516085479,
+        "avg_abs_cross_track_error": 0.1874175690538358
+      },
+      {
+        "scene_name": "test_env_002.json",
+        "episodes": 5,
+        "avg_reward": -10310.973697022042,
+        "avg_episode_length": 2378.6,
+        "success_rate": 0.2,
+        "collision_rate": 0.8,
+        "timeout_rate": 0.0,
+        "avg_goal_progress_ratio": 0.6177982142427865,
+        "avg_abs_cross_track_error": 1.2403224248257463
+      },
+      {
+        "scene_name": "test_env_003.json",
+        "episodes": 5,
+        "avg_reward": -5199.264621771448,
+        "avg_episode_length": 2480.4,
+        "success_rate": 0.2,
+        "collision_rate": 0.8,
+        "timeout_rate": 0.0,
+        "avg_goal_progress_ratio": 0.6476847062939728,
+        "avg_abs_cross_track_error": 1.6666756801314473
+      },
+      {
+        "scene_name": "test_env_004.json",
+        "episodes": 5,
+        "avg_reward": -13642.096684483075,
+        "avg_episode_length": 2714.6,
+        "success_rate": 0.0,
+        "collision_rate": 1.0,
+        "timeout_rate": 0.0,
+        "avg_goal_progress_ratio": 0.49064740994080286,
+        "avg_abs_cross_track_error": 1.4831881641537095
+      },
+      {
+        "scene_name": "test_env_005.json",
+        "episodes": 5,
+        "avg_reward": -9585.491886528125,
+        "avg_episode_length": 2858.6,
+        "success_rate": 0.0,
+        "collision_rate": 1.0,
+        "timeout_rate": 0.0,
+        "avg_goal_progress_ratio": 0.816595166234951,
+        "avg_abs_cross_track_error": 0.3384517414890738
+      },
+      {
+        "scene_name": "test_env_006.json",
+        "episodes": 5,
+        "avg_reward": -4638.705269678994,
+        "avg_episode_length": 797.2,
+        "success_rate": 0.0,
+        "collision_rate": 1.0,
+        "timeout_rate": 0.0,
+        "avg_goal_progress_ratio": 0.24949104181914006,
+        "avg_abs_cross_track_error": 0.4211577280811004
+      },
+      {
+        "scene_name": "test_env_007.json",
+        "episodes": 5,
+        "avg_reward": -2792.5940975565854,
+        "avg_episode_length": 2371.4,
+        "success_rate": 0.6,
+        "collision_rate": 0.4,
+        "timeout_rate": 0.0,
+        "avg_goal_progress_ratio": 0.7187444147552982,
+        "avg_abs_cross_track_error": 0.3399589687964564
+      },
+      {
+        "scene_name": "test_env_008.json",
+        "episodes": 5,
+        "avg_reward": -7947.517603938552,
+        "avg_episode_length": 2878.6,
+        "success_rate": 0.0,
+        "collision_rate": 1.0,
+        "timeout_rate": 0.0,
+        "avg_goal_progress_ratio": 0.6091714560533208,
+        "avg_abs_cross_track_error": 1.8788252301618715
+      },
+      {
+        "scene_name": "test_env_009.json",
+        "episodes": 5,
+        "avg_reward": -11366.857222117222,
+        "avg_episode_length": 2162.0,
+        "success_rate": 0.2,
+        "collision_rate": 0.8,
+        "timeout_rate": 0.0,
+        "avg_goal_progress_ratio": 0.5717285538730165,
+        "avg_abs_cross_track_error": 0.5057872455785566
+      },
+      {
+        "scene_name": "test_env_010.json",
+        "episodes": 5,
+        "avg_reward": -3446.019886971124,
+        "avg_episode_length": 2795.2,
+        "success_rate": 0.8,
+        "collision_rate": 0.2,
+        "timeout_rate": 0.0,
+        "avg_goal_progress_ratio": 0.8839600194305415,
+        "avg_abs_cross_track_error": 0.8401896574996581
+      },
+      {
+        "scene_name": "test_env_011.json",
+        "episodes": 5,
+        "avg_reward": 3009.0659602855094,
+        "avg_episode_length": 3408.2,
+        "success_rate": 1.0,
+        "collision_rate": 0.0,
+        "timeout_rate": 0.0,
+        "avg_goal_progress_ratio": 0.9476180680324642,
+        "avg_abs_cross_track_error": 0.0776679004926526
+      },
+      {
+        "scene_name": "test_env_012.json",
+        "episodes": 5,
+        "avg_reward": 3689.8157880680133,
+        "avg_episode_length": 3478.2,
+        "success_rate": 1.0,
+        "collision_rate": 0.0,
+        "timeout_rate": 0.0,
+        "avg_goal_progress_ratio": 0.9544145561889863,
+        "avg_abs_cross_track_error": 0.2360860476965029
+      },
+      {
+        "scene_name": "test_env_013.json",
+        "episodes": 5,
+        "avg_reward": -2324.424786264794,
+        "avg_episode_length": 1573.4,
+        "success_rate": 0.4,
+        "collision_rate": 0.6,
+        "timeout_rate": 0.0,
+        "avg_goal_progress_ratio": 0.5066456978925744,
+        "avg_abs_cross_track_error": 0.32316626296793205
+      },
+      {
+        "scene_name": "test_env_014.json",
+        "episodes": 5,
+        "avg_reward": 631.7441274448513,
+        "avg_episode_length": 2860.0,
+        "success_rate": 0.8,
+        "collision_rate": 0.2,
+        "timeout_rate": 0.0,
+        "avg_goal_progress_ratio": 0.870117439222005,
+        "avg_abs_cross_track_error": 0.3916765511126006
+      },
+      {
+        "scene_name": "test_env_015.json",
+        "episodes": 5,
+        "avg_reward": -4505.150047482189,
+        "avg_episode_length": 3311.0,
+        "success_rate": 0.8,
+        "collision_rate": 0.2,
+        "timeout_rate": 0.0,
+        "avg_goal_progress_ratio": 0.9317937361542598,
+        "avg_abs_cross_track_error": 0.3214200593585034
+      },
+      {
+        "scene_name": "test_env_016.json",
+        "episodes": 5,
+        "avg_reward": 911.3451247195201,
+        "avg_episode_length": 3001.2,
+        "success_rate": 1.0,
+        "collision_rate": 0.0,
+        "timeout_rate": 0.0,
+        "avg_goal_progress_ratio": 0.9536570503615438,
+        "avg_abs_cross_track_error": 0.6340682313358957
+      },
+      {
+        "scene_name": "test_env_017.json",
+        "episodes": 5,
+        "avg_reward": -19979.370175324228,
+        "avg_episode_length": 3816.6,
+        "success_rate": 0.0,
+        "collision_rate": 1.0,
+        "timeout_rate": 0.2,
+        "avg_goal_progress_ratio": 0.6870728654262898,
+        "avg_abs_cross_track_error": 1.8834275739455315
+      },
+      {
+        "scene_name": "test_env_018.json",
+        "episodes": 5,
+        "avg_reward": -4144.791424570261,
+        "avg_episode_length": 2756.6,
+        "success_rate": 0.4,
+        "collision_rate": 0.6,
+        "timeout_rate": 0.0,
+        "avg_goal_progress_ratio": 0.82050670413189,
+        "avg_abs_cross_track_error": 0.736342253031747
+      },
+      {
+        "scene_name": "test_env_019.json",
+        "episodes": 5,
+        "avg_reward": -1397.228108657955,
+        "avg_episode_length": 3123.6,
+        "success_rate": 0.8,
+        "collision_rate": 0.2,
+        "timeout_rate": 0.0,
+        "avg_goal_progress_ratio": 0.9276290919623266,
+        "avg_abs_cross_track_error": 0.35303698288859425
+      },
+      {
+        "scene_name": "test_env_020.json",
+        "episodes": 5,
+        "avg_reward": -8378.421781248917,
+        "avg_episode_length": 1748.2,
+        "success_rate": 0.0,
+        "collision_rate": 1.0,
+        "timeout_rate": 0.0,
+        "avg_goal_progress_ratio": 0.4265061521143843,
+        "avg_abs_cross_track_error": 0.9669606792079041
+      }
+    ]
+  }
+}

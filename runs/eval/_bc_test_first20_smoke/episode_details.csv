@@ -1,0 +1,2 @@
+weight_name,scene_name,scenario_path,seed,success,termination_reason,episode_reward,episode_steps,episode_wall_time_sec,collision,wall_collision,timeout
+bc_large_pool_v2_epoch020_actor.pth,test_env_001.json,G:\Code\Python\RL_fish\scenarios\large_pool_dataset_200\test\json\test_env_001.json,7,False,persistent_contact_failure,-13596.687131868255,3361,50.68769950000569,True,False,False

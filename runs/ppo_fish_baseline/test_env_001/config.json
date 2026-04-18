@@ -1,0 +1,175 @@
+{
+  "env": {
+    "model": {
+      "xml_path": "G:\\Code\\Python\\RL_fish\\model\\fish_pool_scene.xml"
+    },
+    "camera": {
+      "camera_name": "head_camera",
+      "width": 84,
+      "height": 84,
+      "underwater_effect_enabled": false,
+      "visibility_distance": 2.5,
+      "transmittance_at_visibility": 0.45,
+      "max_depth_distance": 4.0,
+      "water_color_rgb": [
+        52,
+        102,
+        128
+      ],
+      "blur_radius": 1,
+      "max_blur_strength": 0.15,
+      "far_noise_std": 1.5
+    },
+    "imu": {
+      "accel_clip": 50.0,
+      "gyro_clip": 20.0,
+      "goal_relative_clip": 5.0
+    },
+    "mapping": {
+      "theta_m_max": 0.6,
+      "head_servo_command_deadband": 0.01,
+      "servo_speed_sec_per_60deg": 0.16,
+      "servo_accel_deg_per_s2": 2200.0,
+      "tail_servo_speed_sec_per_60deg": 0.18,
+      "tail_servo_accel_deg_per_s2": 2600.0,
+      "head_angle_max_deg": 70.0,
+      "servo_output_radius": 0.0375,
+      "head_joint_arm_length": 0.0725,
+      "head_transmission_efficiency": 1.0,
+      "base_tail_freq": 0.7,
+      "tail_freq_filter_tau": 0.18,
+      "tail_freq_gain": 0.8,
+      "tail_freq_min": 0.5,
+      "tail_freq_max": 1.0,
+      "back_servo_amplitude": 1.0,
+      "back_servo_center_bias": 0.45,
+      "back_servo_bias_head_deadband": 0.0001
+    },
+    "task": {
+      "spawn_x_range": [
+        -3.35,
+        -2.95
+      ],
+      "spawn_y_range": [
+        -0.85,
+        0.85
+      ],
+      "spawn_yaw_range_deg": 8.0,
+      "spawn_wall_margin": 0.06,
+      "spawn_obstacle_margin": 0.05,
+      "spawn_max_attempts": 200,
+      "goal_center": [
+        3.45,
+        0.0
+      ],
+      "goal_half_extents": [
+        0.24,
+        0.4
+      ]
+    },
+    "obstacle": {
+      "min_count": 6,
+      "max_count": 8,
+      "radius_min": 0.11,
+      "radius_max": 0.18,
+      "offset_min": 0.0,
+      "offset_max": 0.0,
+      "obstacle_spacing": 0.18,
+      "start_goal_clearance": 0.8,
+      "pair_progress_min": 0.46,
+      "pair_progress_max": 0.54,
+      "pair_inner_gap_min": 0.04,
+      "pair_inner_gap_max": 0.1,
+      "obs_detect_range": 0.9,
+      "obs_fov_deg": 150.0,
+      "safety_margin": 0.22,
+      "resample_interval_episodes": 1000,
+      "max_sampling_attempts": 100
+    },
+    "reward": {
+      "target_progress_scale": 1.0,
+      "success_reward": 60.0,
+      "obstacle_safe_distance": 0.7,
+      "obstacle_danger_distance": 0.08,
+      "obstacle_collision_penalty": 1.0,
+      "heading_error_scale": 1.0,
+      "smooth_action_l2_scale": 0.12,
+      "smooth_action_delta_scale": 0.2,
+      "step_penalty": 0.01,
+      "wall_collision_cost": 12.0,
+      "timeout_penalty": 8.0,
+      "w_target": 100.0,
+      "w_obs": 14.0,
+      "w_heading": 2.0,
+      "w_smooth": 1.0,
+      "goal_distance_clip": 1.0
+    },
+    "frame_skip": 20,
+    "action_filter_tau": 0.04,
+    "max_episode_steps": 5000,
+    "persistent_contact_termination_steps": 20,
+    "pool_half_length": 4.2,
+    "pool_half_width": 2.2,
+    "fish_collision_radius": 0.18,
+    "head_sensor_offset": 0.28,
+    "render_size": [
+      900,
+      500
+    ],
+    "post_goal_duration_sec": 5.0
+  },
+  "train": {
+    "total_timesteps": 100000000,
+    "num_envs": 1,
+    "learning_rate": 0.0003,
+    "n_steps": 1024,
+    "batch_size": 256,
+    "gamma": 0.99,
+    "gae_lambda": 0.95,
+    "clip_range": 0.2,
+    "ent_coef": 0.0,
+    "vf_coef": 0.5,
+    "max_grad_norm": 0.5,
+    "policy_hidden_sizes": [
+      128,
+      128
+    ],
+    "seed": 7,
+    "log_dir": "G:\\Code\\Python\\RL_fish\\runs\\ppo_fish_baseline",
+    "model_name": "ppo_fish_baseline",
+    "checkpoint_interval_timesteps": 0,
+    "checkpoint_dirname": "checkpoints",
+    "save_policy_weights": true,
+    "monitor_filename": "monitor.csv",
+    "episode_metrics_filename": "episode_metrics.csv",
+    "save_episode_videos": true,
+    "video_interval_episodes": 20,
+    "video_dirname": "videos",
+    "video_camera_name": "top",
+    "video_width": 480,
+    "video_height": 272,
+    "video_fps": 10,
+    "video_frame_stride": 4
+  },
+  "eval": {
+    "episodes": 5,
+    "deterministic": true
+  },
+  "run_id": "BC_RL_100_20260414_test_env_001",
+  "monitor_path": "G:\\Code\\Python\\RL_fish\\runs\\ppo_fish_baseline\\test_env_001\\monitor_BC_RL_100_20260414_test_env_001.monitor.csv",
+  "episode_metrics_path": "G:\\Code\\Python\\RL_fish\\runs\\ppo_fish_baseline\\test_env_001\\episode_metrics.csv",
+  "reward_plot_path": "G:\\Code\\Python\\RL_fish\\runs\\ppo_fish_baseline\\test_env_001\\reward_curve_BC_RL_100_20260414_test_env_001.png",
+  "existing_episode_count_at_start": 2060,
+  "convergence": {
+    "enabled": true,
+    "window_episodes": 40,
+    "min_episodes": 40,
+    "min_success_rate": 0.9,
+    "max_timeout_rate": 0.1,
+    "max_failure_rate": 0.1,
+    "reward_window": 20,
+    "reward_stability_ratio": 0.05
+  },
+  "selected_scenario_path": "G:\\Code\\Python\\RL_fish\\scenarios\\large_pool_dataset_200\\test\\json\\test_env_001.json",
+  "bc_weights": "G:\\Code\\Python\\RL_fish\\runs\\bc_pretrain\\large_pool_bc_v2\\checkpoints\\bc_large_pool_v2_epoch020_actor.pth"
+}

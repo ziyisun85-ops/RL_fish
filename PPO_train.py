@@ -16,6 +16,7 @@ from train import main
 from train_launcher_config import (
     PPO_LOG_DIR,
     PPO_MODEL_NAME,
+    PPO_BC_WEIGHTS,
     build_wrapper_default_args,
     install_common_train_patches,
     parse_train_args,
@@ -26,6 +27,7 @@ DEFAULT_ARGS = build_wrapper_default_args(
     algo="ppo",
     log_dir=PPO_LOG_DIR,
     model_name=PPO_MODEL_NAME,
+    bc_weights=PPO_BC_WEIGHTS,
 )
 
 

@@ -1,0 +1,70 @@
+{
+  "device": "cpu",
+  "weights_dir": null,
+  "weights_glob": "**/*_actor.pth",
+  "scenario_dir": "G:\\Code\\Python\\RL_fish\\scenarios\\large_pool_dataset_200\\test\\json",
+  "scenario_glob": "test_env_*.json",
+  "scene_start": 1,
+  "scene_end": 1,
+  "selected_scene_indices": [
+    1
+  ],
+  "uniform_block_size": 0,
+  "uniform_scenes_per_block": 0,
+  "episodes_per_scene": 1,
+  "max_episode_steps_override": null,
+  "post_goal_duration_sec_override": null,
+  "weights": [
+    {
+      "weight_name": "bc_large_pool_v2_epoch020_actor.pth",
+      "weight_path": "G:\\Code\\Python\\RL_fish\\runs\\bc_pretrain\\large_pool_scene_sets\\1_20\\bc_large_pool_v2_epoch020_actor.pth",
+      "weight_suffix": ".pth",
+      "load_mode": "actor_state_dict",
+      "loaded_tensor_count": 15,
+      "epoch": 20,
+      "train_loss": 0.06467274275528367,
+      "val_loss": 0.12757227397230747,
+      "best_reference_loss": 0.12390465322894963,
+      "dataset_path": "G:\\Code\\Python\\RL_fish\\runs\\bc_demos_large_pool_100\\bc_demo_train_env_*_5eps.npz",
+      "scene_count": 1,
+      "episodes_per_scene": 1,
+      "total_episode_count": 1,
+      "overall_success_count": 0,
+      "overall_success_rate": 0.0,
+      "overall_avg_reward": -13596.687131868255,
+      "overall_avg_steps": 3361.0,
+      "weight_eval_wall_time_sec": 52.5212970000066,
+      "overall_termination_reason_counts": {
+        "persistent_contact_failure": 1
+      },
+      "scenes": [
+        {
+          "scene_name": "test_env_001.json",
+          "scenario_path": "G:\\Code\\Python\\RL_fish\\scenarios\\large_pool_dataset_200\\test\\json\\test_env_001.json",
+          "episodes": [
+            {
+              "seed": 7,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -13596.687131868255,
+              "episode_steps": 3361,
+              "episode_wall_time_sec": 50.68769950000569,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            }
+          ],
+          "episode_count": 1,
+          "success_count": 0,
+          "success_rate": 0.0,
+          "avg_reward": -13596.687131868255,
+          "avg_steps": 3361.0,
+          "scene_eval_wall_time_sec": 50.68986600000062,
+          "termination_reason_counts": {
+            "persistent_contact_failure": 1
+          }
+        }
+      ]
+    }
+  ]
+}

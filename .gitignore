@@ -20,3 +20,10 @@ runs/**/training_summary*.json
 runs/**/config_*.json
 runs/**/curriculum_*.json
 runs/**/curriculum_*.csv
+runs/**/*.pkl
+runs/bc_demos/
+runs/bc_demos_large_pool_100/
+runs/bc_pretrain/
+
+MUJOCO_LOG.TXT
+RL_fish.zip

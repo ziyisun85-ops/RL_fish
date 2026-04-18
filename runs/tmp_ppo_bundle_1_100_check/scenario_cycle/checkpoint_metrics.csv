@@ -1,0 +1,2 @@
+run_id,update_index,num_timesteps,episodes_in_cycle,episodes_completed_total,success_count,success_rate,mean_episode_reward,mean_episode_length,cycle_train_time_sec,model_path,policy_weights_path
+20260418_223100_p39252,1,977,1,1,0,0.0,-6202.826171875,977.0,12.958514300000388,runs/tmp_ppo_bundle_1_100_check/scenario_cycle/checkpoints/ppo_bundle_1_100_check_update_000001.zip,runs/tmp_ppo_bundle_1_100_check/scenario_cycle/checkpoints/ppo_bundle_1_100_check_update_000001_policy.pth

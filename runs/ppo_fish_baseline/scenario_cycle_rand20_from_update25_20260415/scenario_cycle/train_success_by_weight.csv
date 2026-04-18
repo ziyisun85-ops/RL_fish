@@ -1,0 +1,5 @@
+update_index,weight_name,episode_start,episode_end,episode_count,success_count,success_rate,avg_reward
+30,ppo_fish_rand20_from_u025_update_000030_policy.pth,87,100,14,7,0.5,-3022.2227238246373
+31,ppo_fish_rand20_from_u025_update_000031_policy.pth,101,120,20,10,0.5,-1600.499215698242
+32,ppo_fish_rand20_from_u025_update_000032_policy.pth,121,140,20,9,0.45,-2701.1269348144533
+33,ppo_fish_rand20_from_u025_update_000033_policy.pth,141,160,20,14,0.7,-874.6839218139648

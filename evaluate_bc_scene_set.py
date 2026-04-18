@@ -24,7 +24,7 @@ DEFAULT_WEIGHT_PATHS = [
     PROJECT_ROOT / "runs" / "bc_pretrain" / "large_pool_scene_sets" / "1_40__60_100" / "bc_large_pool_1_40__60_100.zip",
     PROJECT_ROOT / "runs" / "bc_pretrain" / "large_pool_scene_sets" / "1_100" / "bc_large_pool_1_100.zip",
 ]
-SCENARIO_ID_PATTERN = re.compile(r"train_env_(\d+)\.json$")
+SCENARIO_ID_PATTERN = re.compile(r"(?:train|test)_env_(\d+)\.json$")
 
 
 def parse_args() -> argparse.Namespace:
@@ -86,6 +86,24 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--episodes-per-scene", type=int, default=1, help="Evaluation episodes per scene.")
     parser.add_argument("--seed", type=int, default=7, help="Base random seed.")
     parser.add_argument("--device", type=str, default="auto", help="Torch device: cuda, cuda:0, cpu, or auto.")
+    parser.add_argument(
+        "--max-episode-steps",
+        type=int,
+        default=None,
+        help="Optional eval-only override for env.max_episode_steps. Lowering this speeds up evaluation.",
+    )
+    parser.add_argument(
+        "--post-goal-duration-sec",
+        type=float,
+        default=None,
+        help="Optional eval-only override for env.post_goal_duration_sec.",
+    )
+    parser.add_argument(
+        "--progress-every-scenes",
+        type=int,
+        default=1,
+        help="Print progress every N scenes. Defaults to 1 so long runs stay visible.",
+    )
     parser.add_argument(
         "--output",
         type=str,
@@ -302,6 +320,7 @@ def write_result_bundle(output_dir: Path, results: dict[str, Any]) -> None:
                 "overall_success_count": weight_result.get("overall_success_count"),
                 "overall_success_rate": weight_result.get("overall_success_rate"),
                 "overall_avg_reward": weight_result.get("overall_avg_reward"),
+                "overall_avg_goal_progress_ratio": weight_result.get("overall_avg_goal_progress_ratio"),
                 "overall_avg_steps": weight_result.get("overall_avg_steps"),
                 "weight_eval_wall_time_sec": weight_result.get("weight_eval_wall_time_sec"),
                 "termination_reason_counts_json": json.dumps(
@@ -321,6 +340,7 @@ def write_result_bundle(output_dir: Path, results: dict[str, Any]) -> None:
                     "success_count": scene_result.get("success_count"),
                     "success_rate": scene_result.get("success_rate"),
                     "avg_reward": scene_result.get("avg_reward"),
+                    "avg_goal_progress_ratio": scene_result.get("avg_goal_progress_ratio"),
                     "avg_steps": scene_result.get("avg_steps"),
                     "scene_eval_wall_time_sec": scene_result.get("scene_eval_wall_time_sec"),
                     "termination_reason_counts_json": json.dumps(
@@ -340,6 +360,7 @@ def write_result_bundle(output_dir: Path, results: dict[str, Any]) -> None:
                         "success": episode.get("success"),
                         "termination_reason": episode.get("termination_reason"),
                         "episode_reward": episode.get("episode_reward"),
+                        "goal_progress_ratio": episode.get("goal_progress_ratio"),
                         "episode_steps": episode.get("episode_steps"),
                         "episode_wall_time_sec": episode.get("episode_wall_time_sec"),
                         "collision": episode.get("collision"),
@@ -365,6 +386,7 @@ def write_result_bundle(output_dir: Path, results: dict[str, Any]) -> None:
             "overall_success_count",
             "overall_success_rate",
             "overall_avg_reward",
+            "overall_avg_goal_progress_ratio",
             "overall_avg_steps",
             "weight_eval_wall_time_sec",
             "termination_reason_counts_json",
@@ -381,6 +403,7 @@ def write_result_bundle(output_dir: Path, results: dict[str, Any]) -> None:
             "success_count",
             "success_rate",
             "avg_reward",
+            "avg_goal_progress_ratio",
             "avg_steps",
             "scene_eval_wall_time_sec",
             "termination_reason_counts_json",
@@ -397,6 +420,7 @@ def write_result_bundle(output_dir: Path, results: dict[str, Any]) -> None:
             "success",
             "termination_reason",
             "episode_reward",
+            "goal_progress_ratio",
             "episode_steps",
             "episode_wall_time_sec",
             "collision",
@@ -459,54 +483,30 @@ def build_bc_eval_model(weight_path: Path, device: str) -> tuple[PPO, Any, dict[
     return model, config, metadata
 
 
-def evaluate_on_scene(
-    model: PPO,
+def apply_eval_overrides(
     config,
-    scenario_path: Path,
     *,
-    episodes_per_scene: int,
-    base_seed: int,
+    max_episode_steps: int | None,
+    post_goal_duration_sec: float | None,
+) -> None:
+    if max_episode_steps is not None:
+        config.env.max_episode_steps = int(max_episode_steps)
+    if post_goal_duration_sec is not None:
+        config.env.post_goal_duration_sec = float(post_goal_duration_sec)
+
+
+def summarize_scene_episodes(
+    scenario_path: Path,
+    episodes: list[dict[str, Any]],
+    *,
+    scene_start_time: float,
 ) -> dict[str, Any]:
-    env = make_single_env(config, scenario_path=scenario_path, render_mode=None)
-    episodes: list[dict[str, Any]] = []
-    scene_start_time = time.perf_counter()
-    try:
-        for episode_offset in range(int(episodes_per_scene)):
-            episode_seed = int(base_seed) + int(episode_offset)
-            observation, info = env.reset(seed=episode_seed)
-            del info
-            done = False
-            episode_reward = 0.0
-            episode_steps = 0
-            final_info: dict[str, Any] = {}
-            episode_start_time = time.perf_counter()
-
-            while not done:
-                action, _ = model.predict(observation, deterministic=True)
-                observation, reward, terminated, truncated, final_info = env.step(action)
-                episode_reward += float(reward)
-                episode_steps += 1
-                done = bool(terminated or truncated)
-
-            episodes.append(
-                {
-                    "seed": int(episode_seed),
-                    "success": bool(final_info.get("success", False)),
-                    "termination_reason": str(final_info.get("termination_reason", "unknown")),
-                    "episode_reward": float(episode_reward),
-                    "episode_steps": int(episode_steps),
-                    "episode_wall_time_sec": float(max(0.0, time.perf_counter() - episode_start_time)),
-                    "collision": bool(final_info.get("collision", False)),
-                    "wall_collision": bool(final_info.get("wall_collision", False)),
-                    "timeout": bool(final_info.get("timeout", False)),
-                }
-            )
-    finally:
-        env.close()
-
     success_count = int(sum(1 for item in episodes if item["success"]))
     success_rate = float(success_count / len(episodes)) if episodes else 0.0
     avg_reward = float(np.mean([float(item["episode_reward"]) for item in episodes])) if episodes else 0.0
+    avg_goal_progress_ratio = (
+        float(np.mean([float(item["goal_progress_ratio"]) for item in episodes])) if episodes else 0.0
+    )
     avg_steps = float(np.mean([float(item["episode_steps"]) for item in episodes])) if episodes else 0.0
     termination_reason_counts: dict[str, int] = {}
     for item in episodes:
@@ -520,10 +520,66 @@ def evaluate_on_scene(
         "success_count": int(success_count),
         "success_rate": float(success_rate),
         "avg_reward": float(avg_reward),
+        "avg_goal_progress_ratio": float(avg_goal_progress_ratio),
         "avg_steps": float(avg_steps),
         "scene_eval_wall_time_sec": float(max(0.0, time.perf_counter() - scene_start_time)),
         "termination_reason_counts": termination_reason_counts,
     }
+
+
+def evaluate_on_scene(
+    model: PPO,
+    env,
+    scenario_path: Path,
+    *,
+    episodes_per_scene: int,
+    base_seed: int,
+) -> dict[str, Any]:
+    episodes: list[dict[str, Any]] = []
+    scene_start_time = time.perf_counter()
+    for episode_offset in range(int(episodes_per_scene)):
+        episode_seed = int(base_seed) + int(episode_offset)
+        observation, info = env.reset(seed=episode_seed)
+        active_path = info.get("scenario_path")
+        if active_path is not None and Path(active_path).resolve() != scenario_path.resolve():
+            raise RuntimeError(
+                "Scenario-cycle evaluation order mismatch: "
+                f"expected {scenario_path}, got {active_path}"
+            )
+        done = False
+        episode_reward = 0.0
+        episode_steps = 0
+        final_info: dict[str, Any] = {}
+        episode_start_time = time.perf_counter()
+
+        with torch.inference_mode():
+            while not done:
+                action, _ = model.predict(observation, deterministic=True)
+                observation, reward, terminated, truncated, final_info = env.step(action)
+                episode_reward += float(reward)
+                episode_steps += 1
+                done = bool(terminated or truncated)
+
+        episodes.append(
+            {
+                "seed": int(episode_seed),
+                "success": bool(final_info.get("success", False)),
+                "termination_reason": str(final_info.get("termination_reason", "unknown")),
+                "episode_reward": float(episode_reward),
+                "goal_progress_ratio": float(final_info.get("goal_progress_ratio", 0.0)),
+                "episode_steps": int(episode_steps),
+                "episode_wall_time_sec": float(max(0.0, time.perf_counter() - episode_start_time)),
+                "collision": bool(final_info.get("collision", False)),
+                "wall_collision": bool(final_info.get("wall_collision", False)),
+                "timeout": bool(final_info.get("timeout", False)),
+            }
+        )
+
+    return summarize_scene_episodes(
+        scenario_path,
+        episodes,
+        scene_start_time=scene_start_time,
+    )
 
 
 def evaluate_weight(
@@ -533,19 +589,45 @@ def evaluate_weight(
     episodes_per_scene: int,
     seed: int,
     device: str,
+    max_episode_steps: int | None,
+    post_goal_duration_sec: float | None,
+    progress_every_scenes: int,
 ) -> dict[str, Any]:
     print(f"Loading BC checkpoint: {weight_path.name}", flush=True)
     weight_start_time = time.perf_counter()
     model, config, metadata = build_bc_eval_model(weight_path, device=device)
+    apply_eval_overrides(
+        config,
+        max_episode_steps=max_episode_steps,
+        post_goal_duration_sec=post_goal_duration_sec,
+    )
+    progress_every = max(1, int(progress_every_scenes))
+    repeated_scenario_paths = [
+        scenario_path
+        for scenario_path in scenario_paths
+        for _ in range(int(episodes_per_scene))
+    ]
+    env = make_single_env(
+        config,
+        scenario_cycle_paths=repeated_scenario_paths,
+        render_mode=None,
+    )
     scene_results: list[dict[str, Any]] = []
     try:
+        print(
+            "  eval config | "
+            f"max_episode_steps={int(config.env.max_episode_steps)} | "
+            f"frame_skip={int(config.env.frame_skip)} | "
+            f"post_goal_duration_sec={float(config.env.post_goal_duration_sec):.2f}",
+            flush=True,
+        )
         running_success_count = 0
         running_episode_count = 0
         for scene_offset, scenario_path in enumerate(scenario_paths):
             scene_seed = int(seed) + scene_offset * 1000
             scene_result = evaluate_on_scene(
                 model,
-                config,
+                env,
                 scenario_path,
                 episodes_per_scene=episodes_per_scene,
                 base_seed=scene_seed,
@@ -553,18 +635,25 @@ def evaluate_weight(
             scene_results.append(scene_result)
             running_success_count += int(scene_result["success_count"])
             running_episode_count += int(scene_result["episode_count"])
-            if (scene_offset + 1) % 10 == 0 or scene_offset + 1 == len(scenario_paths):
+            if (scene_offset + 1) % progress_every == 0 or scene_offset + 1 == len(scenario_paths):
                 running_success_rate = (
                     float(running_success_count / running_episode_count)
                     if running_episode_count > 0
                     else 0.0
                 )
+                elapsed_sec = max(0.0, time.perf_counter() - weight_start_time)
+                avg_scene_sec = elapsed_sec / max(scene_offset + 1, 1)
+                remaining_scenes = max(0, len(scenario_paths) - (scene_offset + 1))
+                eta_sec = avg_scene_sec * remaining_scenes
                 print(
                     f"  scenes {scene_offset + 1:03d}/{len(scenario_paths):03d} | "
-                    f"success={running_success_count}/{running_episode_count} ({running_success_rate:.3f})",
+                    f"success={running_success_count}/{running_episode_count} ({running_success_rate:.3f}) | "
+                    f"last_scene={scene_result['scene_eval_wall_time_sec']:.1f}s | "
+                    f"eta={eta_sec / 60.0:.1f}m",
                     flush=True,
                 )
     finally:
+        env.close()
         if model.get_env() is not None:
             model.get_env().close()
 
@@ -572,6 +661,9 @@ def evaluate_weight(
     overall_success_count = int(sum(1 for item in all_episodes if item["success"]))
     overall_success_rate = float(overall_success_count / len(all_episodes)) if all_episodes else 0.0
     overall_avg_reward = float(np.mean([float(item["episode_reward"]) for item in all_episodes])) if all_episodes else 0.0
+    overall_avg_goal_progress_ratio = (
+        float(np.mean([float(item["goal_progress_ratio"]) for item in all_episodes])) if all_episodes else 0.0
+    )
     overall_avg_steps = float(np.mean([float(item["episode_steps"]) for item in all_episodes])) if all_episodes else 0.0
     overall_termination_reason_counts: dict[str, int] = {}
     for item in all_episodes:
@@ -593,6 +685,7 @@ def evaluate_weight(
         "overall_success_count": int(overall_success_count),
         "overall_success_rate": float(overall_success_rate),
         "overall_avg_reward": float(overall_avg_reward),
+        "overall_avg_goal_progress_ratio": float(overall_avg_goal_progress_ratio),
         "overall_avg_steps": float(overall_avg_steps),
         "weight_eval_wall_time_sec": float(max(0.0, time.perf_counter() - weight_start_time)),
         "overall_termination_reason_counts": overall_termination_reason_counts,
@@ -648,6 +741,10 @@ def main() -> None:
         "uniform_block_size": int(args.uniform_block_size),
         "uniform_scenes_per_block": int(args.uniform_scenes_per_block),
         "episodes_per_scene": int(args.episodes_per_scene),
+        "max_episode_steps_override": None if args.max_episode_steps is None else int(args.max_episode_steps),
+        "post_goal_duration_sec_override": (
+            None if args.post_goal_duration_sec is None else float(args.post_goal_duration_sec)
+        ),
         "weights": [],
     }
     for weight_path in weight_paths:
@@ -657,6 +754,9 @@ def main() -> None:
             episodes_per_scene=int(args.episodes_per_scene),
             seed=int(args.seed),
             device=device,
+            max_episode_steps=args.max_episode_steps,
+            post_goal_duration_sec=args.post_goal_duration_sec,
+            progress_every_scenes=int(args.progress_every_scenes),
         )
         results["weights"].append(weight_result)
 

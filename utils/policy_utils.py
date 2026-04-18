@@ -45,6 +45,8 @@ def make_single_env(
     config: ExperimentConfig,
     *,
     scenario_path: str | Path | None = None,
+    scenario_cycle_paths: list[str | Path] | tuple[str | Path, ...] | None = None,
+    scenario_cycle_sample_size: int = 0,
     render_mode: str | None = None,
     enable_mujoco_viewer: bool = False,
     realtime_playback: bool = False,
@@ -61,6 +63,8 @@ def make_single_env(
         enable_episode_recording=enable_episode_recording,
         viewer_key_callback=viewer_key_callback,
         scenario_path=scenario_path,
+        scenario_cycle_paths=scenario_cycle_paths,
+        scenario_cycle_sample_size=scenario_cycle_sample_size,
     )
 
 

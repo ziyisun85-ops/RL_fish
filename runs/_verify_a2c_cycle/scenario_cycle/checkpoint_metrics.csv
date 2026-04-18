@@ -1,0 +1,2 @@
+run_id,update_index,num_timesteps,episodes_in_cycle,episodes_completed_total,success_count,success_rate,mean_episode_reward,mean_episode_length,cycle_train_time_sec,model_path,policy_weights_path
+20260417_211837_p49100,1,1963,1,1,1,1.0,556.9676513671875,1963.0,32.33544819999952,runs/_verify_a2c_cycle/scenario_cycle/checkpoints/a2c_verify_cycle_update_000001.zip,runs/_verify_a2c_cycle/scenario_cycle/checkpoints/a2c_verify_cycle_update_000001_policy.pth

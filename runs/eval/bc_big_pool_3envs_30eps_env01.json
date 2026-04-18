@@ -1,0 +1,22 @@
+{
+  "device": "cuda",
+  "scenario_path": "G:\\Code\\Python\\RL_fish\\scenarios\\bc_demo_envs\\training_env_01.json",
+  "episodes": 20,
+  "policies": {
+    "bc_actor": {
+      "episodes": 20,
+      "avg_reward": -6825.977204588133,
+      "avg_episode_length": 1103.45,
+      "success_rate": 0.0,
+      "collision_rate": 1.0,
+      "timeout_rate": 0.0,
+      "avg_goal_progress_ratio": 0.6962856441303507,
+      "avg_abs_cross_track_error": 0.18447096710391953
+    }
+  },
+  "bc_dataset_fit": {
+    "dataset_size": 52864,
+    "mse": 0.08931213448837082,
+    "mae": 0.16797549313286061
+  }
+}

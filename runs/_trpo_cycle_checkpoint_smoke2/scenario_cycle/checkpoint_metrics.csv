@@ -1,0 +1,2 @@
+run_id,update_index,num_timesteps,episodes_in_cycle,episodes_completed_total,success_count,success_rate,mean_episode_reward,mean_episode_length,cycle_train_time_sec,model_path,policy_weights_path
+20260418_122435_p21900,1,1091,1,1,0,0.0,-6158.63916015625,1091.0,18.321664299997792,runs/_trpo_cycle_checkpoint_smoke2/scenario_cycle/checkpoints/trpo_cycle_smoke_update_000001.zip,runs/_trpo_cycle_checkpoint_smoke2/scenario_cycle/checkpoints/trpo_cycle_smoke_update_000001_policy.pth

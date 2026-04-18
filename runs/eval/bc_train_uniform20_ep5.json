@@ -1,0 +1,4974 @@
+{
+  "device": "cpu",
+  "scenario_dir": "G:\\Code\\Python\\RL_fish\\scenarios\\large_pool_dataset_200\\train\\json",
+  "scenario_glob": "train_env_*.json",
+  "scene_start": 1,
+  "scene_end": 100,
+  "selected_scene_indices": [
+    1,
+    7,
+    14,
+    20,
+    21,
+    27,
+    34,
+    40,
+    41,
+    47,
+    54,
+    60,
+    61,
+    67,
+    74,
+    80,
+    81,
+    87,
+    94,
+    100
+  ],
+  "uniform_block_size": 20,
+  "uniform_scenes_per_block": 4,
+  "episodes_per_scene": 5,
+  "weights": [
+    {
+      "weight_name": "bc_large_pool_1_20__60_80.zip",
+      "weight_path": "G:\\Code\\Python\\RL_fish\\runs\\bc_pretrain\\large_pool_scene_sets\\1_20__60_80\\bc_large_pool_1_20__60_80.zip",
+      "weight_suffix": ".zip",
+      "load_mode": "sb3_zip",
+      "scene_count": 20,
+      "episodes_per_scene": 5,
+      "total_episode_count": 100,
+      "overall_success_count": 35,
+      "overall_success_rate": 0.35,
+      "overall_avg_reward": -5018.957559790444,
+      "overall_avg_steps": 1994.83,
+      "scenes": [
+        {
+          "scene_name": "train_env_001.json",
+          "scenario_path": "G:\\Code\\Python\\RL_fish\\scenarios\\large_pool_dataset_200\\train\\json\\train_env_001.json",
+          "episodes": [
+            {
+              "seed": 7,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": -10691.418718915957,
+              "episode_steps": 3066,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 8,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -8549.591777626538,
+              "episode_steps": 1376,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 9,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -9921.710627792665,
+              "episode_steps": 1376,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 10,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -8106.265576761615,
+              "episode_steps": 1154,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 11,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -4550.561853169114,
+              "episode_steps": 785,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            }
+          ],
+          "episode_count": 5,
+          "success_count": 1,
+          "success_rate": 0.2,
+          "avg_reward": -8363.909710853177,
+          "avg_steps": 1551.4
+        },
+        {
+          "scene_name": "train_env_007.json",
+          "scenario_path": "G:\\Code\\Python\\RL_fish\\scenarios\\large_pool_dataset_200\\train\\json\\train_env_007.json",
+          "episodes": [
+            {
+              "seed": 1007,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -6529.687024091824,
+              "episode_steps": 956,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 1008,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -16657.491560988918,
+              "episode_steps": 3128,
+              "collision": false,
+              "wall_collision": true,
+              "timeout": false
+            },
+            {
+              "seed": 1009,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -3878.387375121656,
+              "episode_steps": 752,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 1010,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -2740.8780437194837,
+              "episode_steps": 565,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 1011,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": -6635.477941174353,
+              "episode_steps": 2450,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            }
+          ],
+          "episode_count": 5,
+          "success_count": 1,
+          "success_rate": 0.2,
+          "avg_reward": -7288.384389019247,
+          "avg_steps": 1570.2
+        },
+        {
+          "scene_name": "train_env_014.json",
+          "scenario_path": "G:\\Code\\Python\\RL_fish\\scenarios\\large_pool_dataset_200\\train\\json\\train_env_014.json",
+          "episodes": [
+            {
+              "seed": 2007,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -7277.661232449752,
+              "episode_steps": 1272,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 2008,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -6330.314365559576,
+              "episode_steps": 1390,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 2009,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -6053.360613620222,
+              "episode_steps": 1406,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 2010,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -9703.196355436452,
+              "episode_steps": 1620,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 2011,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -14388.605840672986,
+              "episode_steps": 2521,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            }
+          ],
+          "episode_count": 5,
+          "success_count": 0,
+          "success_rate": 0.0,
+          "avg_reward": -8750.627681547798,
+          "avg_steps": 1641.8
+        },
+        {
+          "scene_name": "train_env_020.json",
+          "scenario_path": "G:\\Code\\Python\\RL_fish\\scenarios\\large_pool_dataset_200\\train\\json\\train_env_020.json",
+          "episodes": [
+            {
+              "seed": 3007,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -3209.883683905861,
+              "episode_steps": 662,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 3008,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -3046.166847454031,
+              "episode_steps": 712,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 3009,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -3891.553239991405,
+              "episode_steps": 774,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 3010,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -2833.6902647301954,
+              "episode_steps": 695,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 3011,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -2604.2239706427613,
+              "episode_steps": 659,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            }
+          ],
+          "episode_count": 5,
+          "success_count": 0,
+          "success_rate": 0.0,
+          "avg_reward": -3117.1036013448506,
+          "avg_steps": 700.4
+        },
+        {
+          "scene_name": "train_env_021.json",
+          "scenario_path": "G:\\Code\\Python\\RL_fish\\scenarios\\large_pool_dataset_200\\train\\json\\train_env_021.json",
+          "episodes": [
+            {
+              "seed": 4007,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -14117.24256770723,
+              "episode_steps": 3019,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 4008,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -30137.579874050327,
+              "episode_steps": 4443,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 4009,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -9123.023411825636,
+              "episode_steps": 2418,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 4010,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -9365.982346458288,
+              "episode_steps": 2608,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 4011,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -16175.388870955134,
+              "episode_steps": 3176,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            }
+          ],
+          "episode_count": 5,
+          "success_count": 0,
+          "success_rate": 0.0,
+          "avg_reward": -15783.843414199324,
+          "avg_steps": 3132.8
+        },
+        {
+          "scene_name": "train_env_027.json",
+          "scenario_path": "G:\\Code\\Python\\RL_fish\\scenarios\\large_pool_dataset_200\\train\\json\\train_env_027.json",
+          "episodes": [
+            {
+              "seed": 5007,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": -2360.5810999689947,
+              "episode_steps": 2546,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 5008,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -2808.2649020644753,
+              "episode_steps": 790,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 5009,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -2201.8022758418206,
+              "episode_steps": 676,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 5010,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": -2103.293013241368,
+              "episode_steps": 2644,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 5011,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -2514.8042103427674,
+              "episode_steps": 730,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            }
+          ],
+          "episode_count": 5,
+          "success_count": 2,
+          "success_rate": 0.4,
+          "avg_reward": -2397.749100291885,
+          "avg_steps": 1477.2
+        },
+        {
+          "scene_name": "train_env_034.json",
+          "scenario_path": "G:\\Code\\Python\\RL_fish\\scenarios\\large_pool_dataset_200\\train\\json\\train_env_034.json",
+          "episodes": [
+            {
+              "seed": 6007,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -3442.4810769241203,
+              "episode_steps": 1432,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 6008,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -3427.5369150739843,
+              "episode_steps": 1363,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 6009,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -4319.900326682602,
+              "episode_steps": 1565,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 6010,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -2630.321637833729,
+              "episode_steps": 1363,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 6011,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -10174.84842602412,
+              "episode_steps": 2192,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            }
+          ],
+          "episode_count": 5,
+          "success_count": 0,
+          "success_rate": 0.0,
+          "avg_reward": -4799.01767650771,
+          "avg_steps": 1583.0
+        },
+        {
+          "scene_name": "train_env_040.json",
+          "scenario_path": "G:\\Code\\Python\\RL_fish\\scenarios\\large_pool_dataset_200\\train\\json\\train_env_040.json",
+          "episodes": [
+            {
+              "seed": 7007,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -5848.879152930142,
+              "episode_steps": 1336,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 7008,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": -5612.029804278903,
+              "episode_steps": 3058,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 7009,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -3050.1725008684684,
+              "episode_steps": 1047,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 7010,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -7305.569693762002,
+              "episode_steps": 1426,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 7011,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": -4783.402485637543,
+              "episode_steps": 2614,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            }
+          ],
+          "episode_count": 5,
+          "success_count": 2,
+          "success_rate": 0.4,
+          "avg_reward": -5320.010727495412,
+          "avg_steps": 1896.2
+        },
+        {
+          "scene_name": "train_env_041.json",
+          "scenario_path": "G:\\Code\\Python\\RL_fish\\scenarios\\large_pool_dataset_200\\train\\json\\train_env_041.json",
+          "episodes": [
+            {
+              "seed": 8007,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": 5899.53688766827,
+              "episode_steps": 2611,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 8008,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": 3872.742741723361,
+              "episode_steps": 2797,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 8009,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": 3290.5832227202104,
+              "episode_steps": 2917,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 8010,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": 5236.945241699943,
+              "episode_steps": 2520,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 8011,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": 2883.766721198373,
+              "episode_steps": 2583,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            }
+          ],
+          "episode_count": 5,
+          "success_count": 5,
+          "success_rate": 1.0,
+          "avg_reward": 4236.714963002031,
+          "avg_steps": 2685.6
+        },
+        {
+          "scene_name": "train_env_047.json",
+          "scenario_path": "G:\\Code\\Python\\RL_fish\\scenarios\\large_pool_dataset_200\\train\\json\\train_env_047.json",
+          "episodes": [
+            {
+              "seed": 9007,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -7588.814203367844,
+              "episode_steps": 1423,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 9008,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": -3954.9593957138813,
+              "episode_steps": 2515,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 9009,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -5763.003261937202,
+              "episode_steps": 1444,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 9010,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -10516.884358458201,
+              "episode_steps": 2876,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 9011,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -6500.380355265862,
+              "episode_steps": 1302,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            }
+          ],
+          "episode_count": 5,
+          "success_count": 1,
+          "success_rate": 0.2,
+          "avg_reward": -6864.808314948599,
+          "avg_steps": 1912.0
+        },
+        {
+          "scene_name": "train_env_054.json",
+          "scenario_path": "G:\\Code\\Python\\RL_fish\\scenarios\\large_pool_dataset_200\\train\\json\\train_env_054.json",
+          "episodes": [
+            {
+              "seed": 10007,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": 2923.904625335338,
+              "episode_steps": 2782,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 10008,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": 4129.637231304004,
+              "episode_steps": 2485,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 10009,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": 3533.951986638907,
+              "episode_steps": 2792,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 10010,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": 2661.51776848748,
+              "episode_steps": 2430,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 10011,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": 2360.3452309917734,
+              "episode_steps": 2910,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            }
+          ],
+          "episode_count": 5,
+          "success_count": 5,
+          "success_rate": 1.0,
+          "avg_reward": 3121.8713685515004,
+          "avg_steps": 2679.8
+        },
+        {
+          "scene_name": "train_env_060.json",
+          "scenario_path": "G:\\Code\\Python\\RL_fish\\scenarios\\large_pool_dataset_200\\train\\json\\train_env_060.json",
+          "episodes": [
+            {
+              "seed": 11007,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -11491.227879435126,
+              "episode_steps": 1821,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 11008,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": -1290.1866325812475,
+              "episode_steps": 2601,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 11009,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -11097.575301779198,
+              "episode_steps": 1713,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 11010,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": -10559.562612885478,
+              "episode_steps": 2956,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 11011,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": -9028.262372882524,
+              "episode_steps": 2728,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            }
+          ],
+          "episode_count": 5,
+          "success_count": 3,
+          "success_rate": 0.6,
+          "avg_reward": -8693.362959912716,
+          "avg_steps": 2363.8
+        },
+        {
+          "scene_name": "train_env_061.json",
+          "scenario_path": "G:\\Code\\Python\\RL_fish\\scenarios\\large_pool_dataset_200\\train\\json\\train_env_061.json",
+          "episodes": [
+            {
+              "seed": 12007,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": 5505.772032936633,
+              "episode_steps": 2572,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 12008,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": 5575.7850894500425,
+              "episode_steps": 3000,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 12009,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": 5393.398484413321,
+              "episode_steps": 2509,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 12010,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": 5021.314867758334,
+              "episode_steps": 2772,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 12011,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": 2463.940738090061,
+              "episode_steps": 2473,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            }
+          ],
+          "episode_count": 5,
+          "success_count": 5,
+          "success_rate": 1.0,
+          "avg_reward": 4792.042242529678,
+          "avg_steps": 2665.2
+        },
+        {
+          "scene_name": "train_env_067.json",
+          "scenario_path": "G:\\Code\\Python\\RL_fish\\scenarios\\large_pool_dataset_200\\train\\json\\train_env_067.json",
+          "episodes": [
+            {
+              "seed": 13007,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -2586.949174108636,
+              "episode_steps": 768,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 13008,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": 4262.429457873302,
+              "episode_steps": 2490,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 13009,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": 3262.2477689298894,
+              "episode_steps": 2477,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 13010,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -2556.9203922173438,
+              "episode_steps": 742,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 13011,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": 4946.72954554867,
+              "episode_steps": 2484,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            }
+          ],
+          "episode_count": 5,
+          "success_count": 3,
+          "success_rate": 0.6,
+          "avg_reward": 1465.5074412051765,
+          "avg_steps": 1792.2
+        },
+        {
+          "scene_name": "train_env_074.json",
+          "scenario_path": "G:\\Code\\Python\\RL_fish\\scenarios\\large_pool_dataset_200\\train\\json\\train_env_074.json",
+          "episodes": [
+            {
+              "seed": 14007,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -4809.050147531031,
+              "episode_steps": 1605,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 14008,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -13663.45338312156,
+              "episode_steps": 2616,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 14009,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -15445.395911784812,
+              "episode_steps": 3217,
+              "collision": false,
+              "wall_collision": true,
+              "timeout": false
+            },
+            {
+              "seed": 14010,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -3800.397549753478,
+              "episode_steps": 1606,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 14011,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -3737.0118803819364,
+              "episode_steps": 1431,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            }
+          ],
+          "episode_count": 5,
+          "success_count": 0,
+          "success_rate": 0.0,
+          "avg_reward": -8291.061774514563,
+          "avg_steps": 2095.0
+        },
+        {
+          "scene_name": "train_env_080.json",
+          "scenario_path": "G:\\Code\\Python\\RL_fish\\scenarios\\large_pool_dataset_200\\train\\json\\train_env_080.json",
+          "episodes": [
+            {
+              "seed": 15007,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": -17.373587669934295,
+              "episode_steps": 2398,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 15008,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -6051.690372896927,
+              "episode_steps": 1289,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 15009,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -4944.730973486976,
+              "episode_steps": 1105,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 15010,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": 1986.8697082970107,
+              "episode_steps": 2831,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 15011,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": 1333.8606786503428,
+              "episode_steps": 2393,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            }
+          ],
+          "episode_count": 5,
+          "success_count": 3,
+          "success_rate": 0.6,
+          "avg_reward": -1538.612909421297,
+          "avg_steps": 2003.2
+        },
+        {
+          "scene_name": "train_env_081.json",
+          "scenario_path": "G:\\Code\\Python\\RL_fish\\scenarios\\large_pool_dataset_200\\train\\json\\train_env_081.json",
+          "episodes": [
+            {
+              "seed": 16007,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -2880.885309266221,
+              "episode_steps": 969,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 16008,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -2681.88712013978,
+              "episode_steps": 814,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 16009,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -18089.175737215035,
+              "episode_steps": 2449,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 16010,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": -9500.363561572394,
+              "episode_steps": 2869,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 16011,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -18991.805225903612,
+              "episode_steps": 2590,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            }
+          ],
+          "episode_count": 5,
+          "success_count": 1,
+          "success_rate": 0.2,
+          "avg_reward": -10428.823390819407,
+          "avg_steps": 1938.2
+        },
+        {
+          "scene_name": "train_env_087.json",
+          "scenario_path": "G:\\Code\\Python\\RL_fish\\scenarios\\large_pool_dataset_200\\train\\json\\train_env_087.json",
+          "episodes": [
+            {
+              "seed": 17007,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": -285.8662462346905,
+              "episode_steps": 3183,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 17008,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -9319.124003547773,
+              "episode_steps": 2053,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 17009,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -3095.857610800949,
+              "episode_steps": 731,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 17010,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -3574.0801627809255,
+              "episode_steps": 770,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 17011,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": -350.9199362646962,
+              "episode_steps": 2621,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            }
+          ],
+          "episode_count": 5,
+          "success_count": 2,
+          "success_rate": 0.4,
+          "avg_reward": -3325.169591925807,
+          "avg_steps": 1871.6
+        },
+        {
+          "scene_name": "train_env_094.json",
+          "scenario_path": "G:\\Code\\Python\\RL_fish\\scenarios\\large_pool_dataset_200\\train\\json\\train_env_094.json",
+          "episodes": [
+            {
+              "seed": 18007,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -16429.616516791964,
+              "episode_steps": 2922,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 18008,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -7077.510766998615,
+              "episode_steps": 1250,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 18009,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -2598.8467263928555,
+              "episode_steps": 724,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 18010,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -13397.567783944573,
+              "episode_steps": 2714,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 18011,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": -9911.831324132956,
+              "episode_steps": 2860,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            }
+          ],
+          "episode_count": 5,
+          "success_count": 1,
+          "success_rate": 0.2,
+          "avg_reward": -9883.074623652192,
+          "avg_steps": 2094.0
+        },
+        {
+          "scene_name": "train_env_100.json",
+          "scenario_path": "G:\\Code\\Python\\RL_fish\\scenarios\\large_pool_dataset_200\\train\\json\\train_env_100.json",
+          "episodes": [
+            {
+              "seed": 19007,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -11736.347182408057,
+              "episode_steps": 2936,
+              "collision": false,
+              "wall_collision": true,
+              "timeout": false
+            },
+            {
+              "seed": 19008,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -7568.841808562441,
+              "episode_steps": 2198,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 19009,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -2848.6942715897453,
+              "episode_steps": 782,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 19010,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -9262.1025380722,
+              "episode_steps": 2335,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 19011,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -14332.650922583887,
+              "episode_steps": 2964,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            }
+          ],
+          "episode_count": 5,
+          "success_count": 0,
+          "success_rate": 0.0,
+          "avg_reward": -9149.727344643266,
+          "avg_steps": 2243.0
+        }
+      ]
+    },
+    {
+      "weight_name": "bc_large_pool_1_20__60_100.zip",
+      "weight_path": "G:\\Code\\Python\\RL_fish\\runs\\bc_pretrain\\large_pool_scene_sets\\1_20__60_100\\bc_large_pool_1_20__60_100.zip",
+      "weight_suffix": ".zip",
+      "load_mode": "sb3_zip",
+      "scene_count": 20,
+      "episodes_per_scene": 5,
+      "total_episode_count": 100,
+      "overall_success_count": 36,
+      "overall_success_rate": 0.36,
+      "overall_avg_reward": -3700.090636152596,
+      "overall_avg_steps": 1815.96,
+      "scenes": [
+        {
+          "scene_name": "train_env_001.json",
+          "scenario_path": "G:\\Code\\Python\\RL_fish\\scenarios\\large_pool_dataset_200\\train\\json\\train_env_001.json",
+          "episodes": [
+            {
+              "seed": 7,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -8282.501896537018,
+              "episode_steps": 1320,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 8,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": 714.2165875396407,
+              "episode_steps": 2092,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 9,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": 1203.7517657598564,
+              "episode_steps": 2228,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 10,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -4208.58561700184,
+              "episode_steps": 882,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 11,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -5995.947170572369,
+              "episode_steps": 893,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            }
+          ],
+          "episode_count": 5,
+          "success_count": 2,
+          "success_rate": 0.4,
+          "avg_reward": -3313.813266162346,
+          "avg_steps": 1483.0
+        },
+        {
+          "scene_name": "train_env_007.json",
+          "scenario_path": "G:\\Code\\Python\\RL_fish\\scenarios\\large_pool_dataset_200\\train\\json\\train_env_007.json",
+          "episodes": [
+            {
+              "seed": 1007,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -7415.437798437482,
+              "episode_steps": 1378,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 1008,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": -1974.0260238491153,
+              "episode_steps": 1960,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 1009,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": -1631.950758758931,
+              "episode_steps": 1963,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 1010,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -7892.028806782569,
+              "episode_steps": 1480,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 1011,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -1970.057724451507,
+              "episode_steps": 470,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            }
+          ],
+          "episode_count": 5,
+          "success_count": 2,
+          "success_rate": 0.4,
+          "avg_reward": -4176.700222455921,
+          "avg_steps": 1450.2
+        },
+        {
+          "scene_name": "train_env_014.json",
+          "scenario_path": "G:\\Code\\Python\\RL_fish\\scenarios\\large_pool_dataset_200\\train\\json\\train_env_014.json",
+          "episodes": [
+            {
+              "seed": 2007,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -2592.859557505655,
+              "episode_steps": 706,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 2008,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -3460.017515923377,
+              "episode_steps": 765,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 2009,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -2645.247530320329,
+              "episode_steps": 724,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 2010,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -13596.957025241301,
+              "episode_steps": 1950,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 2011,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -15548.65920241249,
+              "episode_steps": 2741,
+              "collision": false,
+              "wall_collision": true,
+              "timeout": false
+            }
+          ],
+          "episode_count": 5,
+          "success_count": 0,
+          "success_rate": 0.0,
+          "avg_reward": -7568.748166280631,
+          "avg_steps": 1377.2
+        },
+        {
+          "scene_name": "train_env_020.json",
+          "scenario_path": "G:\\Code\\Python\\RL_fish\\scenarios\\large_pool_dataset_200\\train\\json\\train_env_020.json",
+          "episodes": [
+            {
+              "seed": 3007,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -3260.8757374276092,
+              "episode_steps": 1318,
+              "collision": false,
+              "wall_collision": true,
+              "timeout": false
+            },
+            {
+              "seed": 3008,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -5561.730088881117,
+              "episode_steps": 2283,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 3009,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -6164.740905373233,
+              "episode_steps": 2201,
+              "collision": false,
+              "wall_collision": true,
+              "timeout": false
+            },
+            {
+              "seed": 3010,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -3260.8757374276092,
+              "episode_steps": 1318,
+              "collision": false,
+              "wall_collision": true,
+              "timeout": false
+            },
+            {
+              "seed": 3011,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -3260.8757374276092,
+              "episode_steps": 1318,
+              "collision": false,
+              "wall_collision": true,
+              "timeout": false
+            }
+          ],
+          "episode_count": 5,
+          "success_count": 0,
+          "success_rate": 0.0,
+          "avg_reward": -4301.819641307436,
+          "avg_steps": 1687.6
+        },
+        {
+          "scene_name": "train_env_021.json",
+          "scenario_path": "G:\\Code\\Python\\RL_fish\\scenarios\\large_pool_dataset_200\\train\\json\\train_env_021.json",
+          "episodes": [
+            {
+              "seed": 4007,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -6294.062812520381,
+              "episode_steps": 2006,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 4008,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -6739.222472840124,
+              "episode_steps": 2066,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 4009,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -7990.762065212478,
+              "episode_steps": 1988,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 4010,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -6058.210907221784,
+              "episode_steps": 1872,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 4011,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -6361.766069496168,
+              "episode_steps": 2019,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            }
+          ],
+          "episode_count": 5,
+          "success_count": 0,
+          "success_rate": 0.0,
+          "avg_reward": -6688.804865458187,
+          "avg_steps": 1990.2
+        },
+        {
+          "scene_name": "train_env_027.json",
+          "scenario_path": "G:\\Code\\Python\\RL_fish\\scenarios\\large_pool_dataset_200\\train\\json\\train_env_027.json",
+          "episodes": [
+            {
+              "seed": 5007,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": -402.26940146666755,
+              "episode_steps": 2072,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 5008,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": 2064.3947682558346,
+              "episode_steps": 2281,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 5009,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -2106.83368515564,
+              "episode_steps": 582,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 5010,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -8256.088075603795,
+              "episode_steps": 2504,
+              "collision": false,
+              "wall_collision": true,
+              "timeout": false
+            },
+            {
+              "seed": 5011,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": 1794.9188772675734,
+              "episode_steps": 2023,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            }
+          ],
+          "episode_count": 5,
+          "success_count": 3,
+          "success_rate": 0.6,
+          "avg_reward": -1381.1755033405389,
+          "avg_steps": 1892.4
+        },
+        {
+          "scene_name": "train_env_034.json",
+          "scenario_path": "G:\\Code\\Python\\RL_fish\\scenarios\\large_pool_dataset_200\\train\\json\\train_env_034.json",
+          "episodes": [
+            {
+              "seed": 6007,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -8020.789250339407,
+              "episode_steps": 1785,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 6008,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -5129.440604452428,
+              "episode_steps": 1630,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 6009,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -3727.811003295341,
+              "episode_steps": 1262,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 6010,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": 495.32024947854575,
+              "episode_steps": 2135,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 6011,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": 143.94501361425878,
+              "episode_steps": 2073,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            }
+          ],
+          "episode_count": 5,
+          "success_count": 2,
+          "success_rate": 0.4,
+          "avg_reward": -3247.755118998874,
+          "avg_steps": 1777.0
+        },
+        {
+          "scene_name": "train_env_040.json",
+          "scenario_path": "G:\\Code\\Python\\RL_fish\\scenarios\\large_pool_dataset_200\\train\\json\\train_env_040.json",
+          "episodes": [
+            {
+              "seed": 7007,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": 2954.561785017157,
+              "episode_steps": 1992,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 7008,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": 9.342966963082517,
+              "episode_steps": 1892,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 7009,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": -2058.4374313460385,
+              "episode_steps": 1985,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 7010,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -2578.549475350132,
+              "episode_steps": 915,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 7011,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -2021.6626279331704,
+              "episode_steps": 816,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            }
+          ],
+          "episode_count": 5,
+          "success_count": 3,
+          "success_rate": 0.6,
+          "avg_reward": -738.9489565298202,
+          "avg_steps": 1520.0
+        },
+        {
+          "scene_name": "train_env_041.json",
+          "scenario_path": "G:\\Code\\Python\\RL_fish\\scenarios\\large_pool_dataset_200\\train\\json\\train_env_041.json",
+          "episodes": [
+            {
+              "seed": 8007,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": 4948.557587186707,
+              "episode_steps": 1870,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 8008,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": 6608.050980376804,
+              "episode_steps": 1736,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 8009,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": 3052.348476780875,
+              "episode_steps": 2218,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 8010,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": 3816.730021074759,
+              "episode_steps": 2014,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 8011,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": 6396.832577195206,
+              "episode_steps": 1775,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            }
+          ],
+          "episode_count": 5,
+          "success_count": 5,
+          "success_rate": 1.0,
+          "avg_reward": 4964.50392852287,
+          "avg_steps": 1922.6
+        },
+        {
+          "scene_name": "train_env_047.json",
+          "scenario_path": "G:\\Code\\Python\\RL_fish\\scenarios\\large_pool_dataset_200\\train\\json\\train_env_047.json",
+          "episodes": [
+            {
+              "seed": 9007,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": 487.9726473016025,
+              "episode_steps": 1847,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 9008,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": -310.5106058994261,
+              "episode_steps": 1761,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 9009,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -5703.981053114991,
+              "episode_steps": 1468,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 9010,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -5884.922905237829,
+              "episode_steps": 1505,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 9011,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -4788.294961569117,
+              "episode_steps": 1410,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            }
+          ],
+          "episode_count": 5,
+          "success_count": 2,
+          "success_rate": 0.4,
+          "avg_reward": -3239.9473757039523,
+          "avg_steps": 1598.2
+        },
+        {
+          "scene_name": "train_env_054.json",
+          "scenario_path": "G:\\Code\\Python\\RL_fish\\scenarios\\large_pool_dataset_200\\train\\json\\train_env_054.json",
+          "episodes": [
+            {
+              "seed": 10007,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": 3768.7692063443587,
+              "episode_steps": 2233,
+              "collision": false,
+              "wall_collision": true,
+              "timeout": false
+            },
+            {
+              "seed": 10008,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -7010.666189370999,
+              "episode_steps": 2725,
+              "collision": false,
+              "wall_collision": true,
+              "timeout": false
+            },
+            {
+              "seed": 10009,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": 5229.917089861524,
+              "episode_steps": 2149,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 10010,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": 2405.0807136378507,
+              "episode_steps": 2486,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 10011,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": 1963.767877255195,
+              "episode_steps": 2447,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            }
+          ],
+          "episode_count": 5,
+          "success_count": 4,
+          "success_rate": 0.8,
+          "avg_reward": 1271.373739545586,
+          "avg_steps": 2408.0
+        },
+        {
+          "scene_name": "train_env_060.json",
+          "scenario_path": "G:\\Code\\Python\\RL_fish\\scenarios\\large_pool_dataset_200\\train\\json\\train_env_060.json",
+          "episodes": [
+            {
+              "seed": 11007,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -7953.091228724653,
+              "episode_steps": 1295,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 11008,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -11413.242278386178,
+              "episode_steps": 1869,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 11009,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": -4617.184401283697,
+              "episode_steps": 2144,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 11010,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -4384.705590679956,
+              "episode_steps": 678,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 11011,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -14150.37325577735,
+              "episode_steps": 2326,
+              "collision": false,
+              "wall_collision": true,
+              "timeout": false
+            }
+          ],
+          "episode_count": 5,
+          "success_count": 1,
+          "success_rate": 0.2,
+          "avg_reward": -8503.719350970367,
+          "avg_steps": 1662.4
+        },
+        {
+          "scene_name": "train_env_061.json",
+          "scenario_path": "G:\\Code\\Python\\RL_fish\\scenarios\\large_pool_dataset_200\\train\\json\\train_env_061.json",
+          "episodes": [
+            {
+              "seed": 12007,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -3591.291547952032,
+              "episode_steps": 2260,
+              "collision": false,
+              "wall_collision": true,
+              "timeout": false
+            },
+            {
+              "seed": 12008,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -4432.7905734313445,
+              "episode_steps": 2333,
+              "collision": false,
+              "wall_collision": true,
+              "timeout": false
+            },
+            {
+              "seed": 12009,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -2420.0471177147774,
+              "episode_steps": 2144,
+              "collision": false,
+              "wall_collision": true,
+              "timeout": false
+            },
+            {
+              "seed": 12010,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -2989.953943252504,
+              "episode_steps": 2250,
+              "collision": false,
+              "wall_collision": true,
+              "timeout": false
+            },
+            {
+              "seed": 12011,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -4670.667619510482,
+              "episode_steps": 2445,
+              "collision": false,
+              "wall_collision": true,
+              "timeout": false
+            }
+          ],
+          "episode_count": 5,
+          "success_count": 0,
+          "success_rate": 0.0,
+          "avg_reward": -3620.9501603722283,
+          "avg_steps": 2286.4
+        },
+        {
+          "scene_name": "train_env_067.json",
+          "scenario_path": "G:\\Code\\Python\\RL_fish\\scenarios\\large_pool_dataset_200\\train\\json\\train_env_067.json",
+          "episodes": [
+            {
+              "seed": 13007,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -11317.243280684219,
+              "episode_steps": 1547,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 13008,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -19820.924602341114,
+              "episode_steps": 3474,
+              "collision": false,
+              "wall_collision": true,
+              "timeout": false
+            },
+            {
+              "seed": 13009,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": 3862.402171773027,
+              "episode_steps": 2019,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 13010,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": 4363.148268443065,
+              "episode_steps": 2079,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 13011,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -2919.1703963746145,
+              "episode_steps": 737,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            }
+          ],
+          "episode_count": 5,
+          "success_count": 2,
+          "success_rate": 0.4,
+          "avg_reward": -5166.3575678367715,
+          "avg_steps": 1971.2
+        },
+        {
+          "scene_name": "train_env_074.json",
+          "scenario_path": "G:\\Code\\Python\\RL_fish\\scenarios\\large_pool_dataset_200\\train\\json\\train_env_074.json",
+          "episodes": [
+            {
+              "seed": 14007,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -3098.764872062621,
+              "episode_steps": 1262,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 14008,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -5724.002749570777,
+              "episode_steps": 2287,
+              "collision": false,
+              "wall_collision": true,
+              "timeout": false
+            },
+            {
+              "seed": 14009,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -5482.882809236621,
+              "episode_steps": 2371,
+              "collision": false,
+              "wall_collision": true,
+              "timeout": false
+            },
+            {
+              "seed": 14010,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -2527.924605288712,
+              "episode_steps": 2417,
+              "collision": false,
+              "wall_collision": true,
+              "timeout": false
+            },
+            {
+              "seed": 14011,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -4849.245148144858,
+              "episode_steps": 2303,
+              "collision": false,
+              "wall_collision": true,
+              "timeout": false
+            }
+          ],
+          "episode_count": 5,
+          "success_count": 0,
+          "success_rate": 0.0,
+          "avg_reward": -4336.564036860718,
+          "avg_steps": 2128.0
+        },
+        {
+          "scene_name": "train_env_080.json",
+          "scenario_path": "G:\\Code\\Python\\RL_fish\\scenarios\\large_pool_dataset_200\\train\\json\\train_env_080.json",
+          "episodes": [
+            {
+              "seed": 15007,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": 3680.927925001317,
+              "episode_steps": 1838,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 15008,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": 4877.258375337697,
+              "episode_steps": 1854,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 15009,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": 5238.446225311479,
+              "episode_steps": 1809,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 15010,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -3764.7283407574037,
+              "episode_steps": 986,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 15011,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": -1885.275069673406,
+              "episode_steps": 2037,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            }
+          ],
+          "episode_count": 5,
+          "success_count": 4,
+          "success_rate": 0.8,
+          "avg_reward": 1629.325823043937,
+          "avg_steps": 1704.8
+        },
+        {
+          "scene_name": "train_env_081.json",
+          "scenario_path": "G:\\Code\\Python\\RL_fish\\scenarios\\large_pool_dataset_200\\train\\json\\train_env_081.json",
+          "episodes": [
+            {
+              "seed": 16007,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": -3083.6546696849005,
+              "episode_steps": 1882,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 16008,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -1964.1212865473715,
+              "episode_steps": 586,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 16009,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -1993.2521410393454,
+              "episode_steps": 589,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 16010,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": -5773.10985866446,
+              "episode_steps": 1832,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 16011,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -14917.129149565719,
+              "episode_steps": 2527,
+              "collision": false,
+              "wall_collision": true,
+              "timeout": false
+            }
+          ],
+          "episode_count": 5,
+          "success_count": 2,
+          "success_rate": 0.4,
+          "avg_reward": -5546.253421100359,
+          "avg_steps": 1483.2
+        },
+        {
+          "scene_name": "train_env_087.json",
+          "scenario_path": "G:\\Code\\Python\\RL_fish\\scenarios\\large_pool_dataset_200\\train\\json\\train_env_087.json",
+          "episodes": [
+            {
+              "seed": 17007,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -9142.907316677749,
+              "episode_steps": 2675,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 17008,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -9881.078159387074,
+              "episode_steps": 2696,
+              "collision": false,
+              "wall_collision": true,
+              "timeout": false
+            },
+            {
+              "seed": 17009,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -10515.19942433015,
+              "episode_steps": 2777,
+              "collision": false,
+              "wall_collision": true,
+              "timeout": false
+            },
+            {
+              "seed": 17010,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -11315.873064028909,
+              "episode_steps": 2802,
+              "collision": false,
+              "wall_collision": true,
+              "timeout": false
+            },
+            {
+              "seed": 17011,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": -2652.0167565870456,
+              "episode_steps": 2787,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            }
+          ],
+          "episode_count": 5,
+          "success_count": 1,
+          "success_rate": 0.2,
+          "avg_reward": -8701.414944202184,
+          "avg_steps": 2747.4
+        },
+        {
+          "scene_name": "train_env_094.json",
+          "scenario_path": "G:\\Code\\Python\\RL_fish\\scenarios\\large_pool_dataset_200\\train\\json\\train_env_094.json",
+          "episodes": [
+            {
+              "seed": 18007,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -11229.708898690475,
+              "episode_steps": 2152,
+              "collision": false,
+              "wall_collision": true,
+              "timeout": false
+            },
+            {
+              "seed": 18008,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -15371.603243811904,
+              "episode_steps": 2833,
+              "collision": false,
+              "wall_collision": true,
+              "timeout": false
+            },
+            {
+              "seed": 18009,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -4897.904565267874,
+              "episode_steps": 841,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 18010,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -7045.0724770135175,
+              "episode_steps": 1038,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 18011,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": -5194.964023207299,
+              "episode_steps": 2097,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            }
+          ],
+          "episode_count": 5,
+          "success_count": 1,
+          "success_rate": 0.2,
+          "avg_reward": -8747.850641598216,
+          "avg_steps": 1792.2
+        },
+        {
+          "scene_name": "train_env_100.json",
+          "scenario_path": "G:\\Code\\Python\\RL_fish\\scenarios\\large_pool_dataset_200\\train\\json\\train_env_100.json",
+          "episodes": [
+            {
+              "seed": 19007,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -8076.696046568345,
+              "episode_steps": 2180,
+              "collision": false,
+              "wall_collision": true,
+              "timeout": false
+            },
+            {
+              "seed": 19008,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": 141.23446090449954,
+              "episode_steps": 1967,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 19009,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -2046.6403414559989,
+              "episode_steps": 532,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 19010,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -2136.8486424152643,
+              "episode_steps": 537,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 19011,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": -812.0143053937028,
+              "episode_steps": 1970,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            }
+          ],
+          "episode_count": 5,
+          "success_count": 2,
+          "success_rate": 0.4,
+          "avg_reward": -2586.192974985762,
+          "avg_steps": 1437.2
+        }
+      ]
+    },
+    {
+      "weight_name": "bc_large_pool_1_40__60_100.zip",
+      "weight_path": "G:\\Code\\Python\\RL_fish\\runs\\bc_pretrain\\large_pool_scene_sets\\1_40__60_100\\bc_large_pool_1_40__60_100.zip",
+      "weight_suffix": ".zip",
+      "load_mode": "sb3_zip",
+      "scene_count": 20,
+      "episodes_per_scene": 5,
+      "total_episode_count": 100,
+      "overall_success_count": 50,
+      "overall_success_rate": 0.5,
+      "overall_avg_reward": -3532.471708341576,
+      "overall_avg_steps": 1935.78,
+      "scenes": [
+        {
+          "scene_name": "train_env_001.json",
+          "scenario_path": "G:\\Code\\Python\\RL_fish\\scenarios\\large_pool_dataset_200\\train\\json\\train_env_001.json",
+          "episodes": [
+            {
+              "seed": 7,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -4881.983396824347,
+              "episode_steps": 740,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 8,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -20003.220332574703,
+              "episode_steps": 2800,
+              "collision": false,
+              "wall_collision": true,
+              "timeout": false
+            },
+            {
+              "seed": 9,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -22610.503338479222,
+              "episode_steps": 2769,
+              "collision": false,
+              "wall_collision": true,
+              "timeout": false
+            },
+            {
+              "seed": 10,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -21761.47497787398,
+              "episode_steps": 2870,
+              "collision": false,
+              "wall_collision": true,
+              "timeout": false
+            },
+            {
+              "seed": 11,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -22925.81895999151,
+              "episode_steps": 2531,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            }
+          ],
+          "episode_count": 5,
+          "success_count": 0,
+          "success_rate": 0.0,
+          "avg_reward": -18436.60020114875,
+          "avg_steps": 2342.0
+        },
+        {
+          "scene_name": "train_env_007.json",
+          "scenario_path": "G:\\Code\\Python\\RL_fish\\scenarios\\large_pool_dataset_200\\train\\json\\train_env_007.json",
+          "episodes": [
+            {
+              "seed": 1007,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -8403.9792181773,
+              "episode_steps": 1812,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 1008,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -12400.068008429107,
+              "episode_steps": 2722,
+              "collision": false,
+              "wall_collision": true,
+              "timeout": false
+            },
+            {
+              "seed": 1009,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": -1362.410542199792,
+              "episode_steps": 1988,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 1010,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -12531.960785652112,
+              "episode_steps": 2596,
+              "collision": false,
+              "wall_collision": true,
+              "timeout": false
+            },
+            {
+              "seed": 1011,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": -2380.0724615249824,
+              "episode_steps": 2282,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            }
+          ],
+          "episode_count": 5,
+          "success_count": 2,
+          "success_rate": 0.4,
+          "avg_reward": -7415.698203196659,
+          "avg_steps": 2280.0
+        },
+        {
+          "scene_name": "train_env_014.json",
+          "scenario_path": "G:\\Code\\Python\\RL_fish\\scenarios\\large_pool_dataset_200\\train\\json\\train_env_014.json",
+          "episodes": [
+            {
+              "seed": 2007,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -14779.625363579384,
+              "episode_steps": 2695,
+              "collision": false,
+              "wall_collision": true,
+              "timeout": false
+            },
+            {
+              "seed": 2008,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -5343.99282727355,
+              "episode_steps": 979,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 2009,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -2890.952332129496,
+              "episode_steps": 1021,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 2010,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -10766.983612890257,
+              "episode_steps": 1788,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 2011,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -4571.196033535332,
+              "episode_steps": 923,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            }
+          ],
+          "episode_count": 5,
+          "success_count": 0,
+          "success_rate": 0.0,
+          "avg_reward": -7670.550033881603,
+          "avg_steps": 1481.2
+        },
+        {
+          "scene_name": "train_env_020.json",
+          "scenario_path": "G:\\Code\\Python\\RL_fish\\scenarios\\large_pool_dataset_200\\train\\json\\train_env_020.json",
+          "episodes": [
+            {
+              "seed": 3007,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": 3651.685410180124,
+              "episode_steps": 2478,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 3008,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": 3164.693002130376,
+              "episode_steps": 2368,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 3009,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": 2303.4073887498785,
+              "episode_steps": 2479,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 3010,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": 2391.371033760627,
+              "episode_steps": 2722,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 3011,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": 2758.118332808981,
+              "episode_steps": 2437,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            }
+          ],
+          "episode_count": 5,
+          "success_count": 5,
+          "success_rate": 1.0,
+          "avg_reward": 2853.8550335259974,
+          "avg_steps": 2496.8
+        },
+        {
+          "scene_name": "train_env_021.json",
+          "scenario_path": "G:\\Code\\Python\\RL_fish\\scenarios\\large_pool_dataset_200\\train\\json\\train_env_021.json",
+          "episodes": [
+            {
+              "seed": 4007,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": 1016.8616824661249,
+              "episode_steps": 2326,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 4008,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": -283.70967850775395,
+              "episode_steps": 2298,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 4009,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -7331.74280731108,
+              "episode_steps": 2328,
+              "collision": false,
+              "wall_collision": true,
+              "timeout": false
+            },
+            {
+              "seed": 4010,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -7722.748758347935,
+              "episode_steps": 1820,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 4011,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -4930.462192158115,
+              "episode_steps": 1733,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            }
+          ],
+          "episode_count": 5,
+          "success_count": 2,
+          "success_rate": 0.4,
+          "avg_reward": -3850.3603507717517,
+          "avg_steps": 2101.0
+        },
+        {
+          "scene_name": "train_env_027.json",
+          "scenario_path": "G:\\Code\\Python\\RL_fish\\scenarios\\large_pool_dataset_200\\train\\json\\train_env_027.json",
+          "episodes": [
+            {
+              "seed": 5007,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": 1239.3126667650263,
+              "episode_steps": 2452,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 5008,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -8497.233919322967,
+              "episode_steps": 2401,
+              "collision": false,
+              "wall_collision": true,
+              "timeout": false
+            },
+            {
+              "seed": 5009,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -7647.111916686277,
+              "episode_steps": 2478,
+              "collision": false,
+              "wall_collision": true,
+              "timeout": false
+            },
+            {
+              "seed": 5010,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": 405.1986141582683,
+              "episode_steps": 2367,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 5011,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -6251.185581056903,
+              "episode_steps": 2312,
+              "collision": false,
+              "wall_collision": true,
+              "timeout": false
+            }
+          ],
+          "episode_count": 5,
+          "success_count": 2,
+          "success_rate": 0.4,
+          "avg_reward": -4150.204027228571,
+          "avg_steps": 2402.0
+        },
+        {
+          "scene_name": "train_env_034.json",
+          "scenario_path": "G:\\Code\\Python\\RL_fish\\scenarios\\large_pool_dataset_200\\train\\json\\train_env_034.json",
+          "episodes": [
+            {
+              "seed": 6007,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": 558.0938363012721,
+              "episode_steps": 1932,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 6008,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": -2764.6661270502273,
+              "episode_steps": 2429,
+              "collision": false,
+              "wall_collision": true,
+              "timeout": false
+            },
+            {
+              "seed": 6009,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -11145.083112713171,
+              "episode_steps": 2375,
+              "collision": false,
+              "wall_collision": true,
+              "timeout": false
+            },
+            {
+              "seed": 6010,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": -214.1142370000147,
+              "episode_steps": 1897,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 6011,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": -2585.1426631649024,
+              "episode_steps": 2373,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            }
+          ],
+          "episode_count": 5,
+          "success_count": 4,
+          "success_rate": 0.8,
+          "avg_reward": -3230.1824607254084,
+          "avg_steps": 2201.2
+        },
+        {
+          "scene_name": "train_env_040.json",
+          "scenario_path": "G:\\Code\\Python\\RL_fish\\scenarios\\large_pool_dataset_200\\train\\json\\train_env_040.json",
+          "episodes": [
+            {
+              "seed": 7007,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": 2742.153908455729,
+              "episode_steps": 1855,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 7008,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -4284.878938436489,
+              "episode_steps": 1332,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 7009,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": -408.9798085618011,
+              "episode_steps": 1909,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 7010,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": 220.65648637648115,
+              "episode_steps": 1955,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 7011,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": 2277.451277741728,
+              "episode_steps": 1745,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            }
+          ],
+          "episode_count": 5,
+          "success_count": 4,
+          "success_rate": 0.8,
+          "avg_reward": 109.28058511512958,
+          "avg_steps": 1759.2
+        },
+        {
+          "scene_name": "train_env_041.json",
+          "scenario_path": "G:\\Code\\Python\\RL_fish\\scenarios\\large_pool_dataset_200\\train\\json\\train_env_041.json",
+          "episodes": [
+            {
+              "seed": 8007,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": 5362.984218505822,
+              "episode_steps": 2083,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 8008,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": 2754.9048820081252,
+              "episode_steps": 2185,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 8009,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": 4275.850279821683,
+              "episode_steps": 2141,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 8010,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": 2860.318385199758,
+              "episode_steps": 2107,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 8011,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": 5460.072498964725,
+              "episode_steps": 2069,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            }
+          ],
+          "episode_count": 5,
+          "success_count": 5,
+          "success_rate": 1.0,
+          "avg_reward": 4142.826052900024,
+          "avg_steps": 2117.0
+        },
+        {
+          "scene_name": "train_env_047.json",
+          "scenario_path": "G:\\Code\\Python\\RL_fish\\scenarios\\large_pool_dataset_200\\train\\json\\train_env_047.json",
+          "episodes": [
+            {
+              "seed": 9007,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -6547.354148214004,
+              "episode_steps": 1670,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 9008,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": -91.88045616456046,
+              "episode_steps": 1909,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 9009,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -6130.804546391824,
+              "episode_steps": 1588,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 9010,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -6591.582461412772,
+              "episode_steps": 2400,
+              "collision": false,
+              "wall_collision": true,
+              "timeout": false
+            },
+            {
+              "seed": 9011,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": 472.9446315996623,
+              "episode_steps": 2065,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            }
+          ],
+          "episode_count": 5,
+          "success_count": 2,
+          "success_rate": 0.4,
+          "avg_reward": -3777.7353961167,
+          "avg_steps": 1926.4
+        },
+        {
+          "scene_name": "train_env_054.json",
+          "scenario_path": "G:\\Code\\Python\\RL_fish\\scenarios\\large_pool_dataset_200\\train\\json\\train_env_054.json",
+          "episodes": [
+            {
+              "seed": 10007,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": 564.4233753088728,
+              "episode_steps": 2556,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 10008,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": 1864.8825207097684,
+              "episode_steps": 2410,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 10009,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": 1957.7703415842832,
+              "episode_steps": 2381,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 10010,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": 2882.1096379469395,
+              "episode_steps": 2075,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 10011,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": 3294.6851546989656,
+              "episode_steps": 2231,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            }
+          ],
+          "episode_count": 5,
+          "success_count": 5,
+          "success_rate": 1.0,
+          "avg_reward": 2112.774206049766,
+          "avg_steps": 2330.6
+        },
+        {
+          "scene_name": "train_env_060.json",
+          "scenario_path": "G:\\Code\\Python\\RL_fish\\scenarios\\large_pool_dataset_200\\train\\json\\train_env_060.json",
+          "episodes": [
+            {
+              "seed": 11007,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": -6528.03949484266,
+              "episode_steps": 2590,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 11008,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -1740.3937503309137,
+              "episode_steps": 327,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 11009,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": -6991.943953031763,
+              "episode_steps": 2387,
+              "collision": false,
+              "wall_collision": true,
+              "timeout": false
+            },
+            {
+              "seed": 11010,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": -5724.762231459322,
+              "episode_steps": 2305,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 11011,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -13570.070158963299,
+              "episode_steps": 2621,
+              "collision": false,
+              "wall_collision": true,
+              "timeout": false
+            }
+          ],
+          "episode_count": 5,
+          "success_count": 3,
+          "success_rate": 0.6,
+          "avg_reward": -6911.041917725592,
+          "avg_steps": 2046.0
+        },
+        {
+          "scene_name": "train_env_061.json",
+          "scenario_path": "G:\\Code\\Python\\RL_fish\\scenarios\\large_pool_dataset_200\\train\\json\\train_env_061.json",
+          "episodes": [
+            {
+              "seed": 12007,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": 5845.481402560144,
+              "episode_steps": 1955,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 12008,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": 5739.268832273898,
+              "episode_steps": 1920,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 12009,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -2488.7978362202625,
+              "episode_steps": 2233,
+              "collision": false,
+              "wall_collision": true,
+              "timeout": false
+            },
+            {
+              "seed": 12010,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": 5429.800783498436,
+              "episode_steps": 2030,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 12011,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -3363.4380326019827,
+              "episode_steps": 2385,
+              "collision": false,
+              "wall_collision": true,
+              "timeout": false
+            }
+          ],
+          "episode_count": 5,
+          "success_count": 3,
+          "success_rate": 0.6,
+          "avg_reward": 2232.4630299020464,
+          "avg_steps": 2104.6
+        },
+        {
+          "scene_name": "train_env_067.json",
+          "scenario_path": "G:\\Code\\Python\\RL_fish\\scenarios\\large_pool_dataset_200\\train\\json\\train_env_067.json",
+          "episodes": [
+            {
+              "seed": 13007,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -11523.054366541683,
+              "episode_steps": 1354,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 13008,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -5235.909020174489,
+              "episode_steps": 860,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 13009,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": 3984.9682135061016,
+              "episode_steps": 1797,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 13010,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": 3210.8174368327213,
+              "episode_steps": 1836,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 13011,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -12920.43560903646,
+              "episode_steps": 1498,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            }
+          ],
+          "episode_count": 5,
+          "success_count": 2,
+          "success_rate": 0.4,
+          "avg_reward": -4496.722669082762,
+          "avg_steps": 1469.0
+        },
+        {
+          "scene_name": "train_env_074.json",
+          "scenario_path": "G:\\Code\\Python\\RL_fish\\scenarios\\large_pool_dataset_200\\train\\json\\train_env_074.json",
+          "episodes": [
+            {
+              "seed": 14007,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -5128.425217962816,
+              "episode_steps": 2322,
+              "collision": false,
+              "wall_collision": true,
+              "timeout": false
+            },
+            {
+              "seed": 14008,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -2316.7104764784604,
+              "episode_steps": 1064,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 14009,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -5246.124184894054,
+              "episode_steps": 2597,
+              "collision": false,
+              "wall_collision": true,
+              "timeout": false
+            },
+            {
+              "seed": 14010,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": -2431.552634377443,
+              "episode_steps": 2153,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 14011,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -6932.911385284608,
+              "episode_steps": 2540,
+              "collision": false,
+              "wall_collision": true,
+              "timeout": false
+            }
+          ],
+          "episode_count": 5,
+          "success_count": 1,
+          "success_rate": 0.2,
+          "avg_reward": -4411.144779799477,
+          "avg_steps": 2135.2
+        },
+        {
+          "scene_name": "train_env_080.json",
+          "scenario_path": "G:\\Code\\Python\\RL_fish\\scenarios\\large_pool_dataset_200\\train\\json\\train_env_080.json",
+          "episodes": [
+            {
+              "seed": 15007,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": -1265.9852032310578,
+              "episode_steps": 1975,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 15008,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": 415.52348313821005,
+              "episode_steps": 1897,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 15009,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": 1538.5816961838955,
+              "episode_steps": 2060,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 15010,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": 1329.6631850941917,
+              "episode_steps": 1992,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 15011,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": -171.44119516305628,
+              "episode_steps": 1910,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            }
+          ],
+          "episode_count": 5,
+          "success_count": 5,
+          "success_rate": 1.0,
+          "avg_reward": 369.2683932044366,
+          "avg_steps": 1966.8
+        },
+        {
+          "scene_name": "train_env_081.json",
+          "scenario_path": "G:\\Code\\Python\\RL_fish\\scenarios\\large_pool_dataset_200\\train\\json\\train_env_081.json",
+          "episodes": [
+            {
+              "seed": 16007,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -10263.268316442292,
+              "episode_steps": 1809,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 16008,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": -3499.146260648261,
+              "episode_steps": 1903,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 16009,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -1735.9385981616472,
+              "episode_steps": 573,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 16010,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": -6569.876823561119,
+              "episode_steps": 1887,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 16011,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": -2897.7046169172086,
+              "episode_steps": 2043,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            }
+          ],
+          "episode_count": 5,
+          "success_count": 3,
+          "success_rate": 0.6,
+          "avg_reward": -4993.186923146105,
+          "avg_steps": 1643.0
+        },
+        {
+          "scene_name": "train_env_087.json",
+          "scenario_path": "G:\\Code\\Python\\RL_fish\\scenarios\\large_pool_dataset_200\\train\\json\\train_env_087.json",
+          "episodes": [
+            {
+              "seed": 17007,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -2446.7705872555744,
+              "episode_steps": 626,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 17008,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -3958.680855018077,
+              "episode_steps": 696,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 17009,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -2936.184811573531,
+              "episode_steps": 649,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 17010,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -2698.9719293696126,
+              "episode_steps": 602,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 17011,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -2595.6024455051274,
+              "episode_steps": 590,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            }
+          ],
+          "episode_count": 5,
+          "success_count": 0,
+          "success_rate": 0.0,
+          "avg_reward": -2927.242125744385,
+          "avg_steps": 632.6
+        },
+        {
+          "scene_name": "train_env_094.json",
+          "scenario_path": "G:\\Code\\Python\\RL_fish\\scenarios\\large_pool_dataset_200\\train\\json\\train_env_094.json",
+          "episodes": [
+            {
+              "seed": 18007,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": -2551.2759119468533,
+              "episode_steps": 1949,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 18008,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -1752.1230999624179,
+              "episode_steps": 536,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 18009,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": -3170.3846948854925,
+              "episode_steps": 2134,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 18010,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -8472.761956992274,
+              "episode_steps": 1604,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 18011,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -1885.2707307887515,
+              "episode_steps": 524,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            }
+          ],
+          "episode_count": 5,
+          "success_count": 2,
+          "success_rate": 0.4,
+          "avg_reward": -3566.3632789151575,
+          "avg_steps": 1349.4
+        },
+        {
+          "scene_name": "train_env_100.json",
+          "scenario_path": "G:\\Code\\Python\\RL_fish\\scenarios\\large_pool_dataset_200\\train\\json\\train_env_100.json",
+          "episodes": [
+            {
+              "seed": 19007,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -9371.839683970544,
+              "episode_steps": 2219,
+              "collision": false,
+              "wall_collision": true,
+              "timeout": false
+            },
+            {
+              "seed": 19008,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -5810.836352686474,
+              "episode_steps": 2348,
+              "collision": false,
+              "wall_collision": true,
+              "timeout": false
+            },
+            {
+              "seed": 19009,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -5536.404008514926,
+              "episode_steps": 1435,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 19010,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -6753.68873666756,
+              "episode_steps": 2189,
+              "collision": false,
+              "wall_collision": true,
+              "timeout": false
+            },
+            {
+              "seed": 19011,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -5691.576718390407,
+              "episode_steps": 1467,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            }
+          ],
+          "episode_count": 5,
+          "success_count": 0,
+          "success_rate": 0.0,
+          "avg_reward": -6632.869100045983,
+          "avg_steps": 1931.6
+        }
+      ]
+    },
+    {
+      "weight_name": "bc_large_pool_1_100.zip",
+      "weight_path": "G:\\Code\\Python\\RL_fish\\runs\\bc_pretrain\\large_pool_scene_sets\\1_100\\bc_large_pool_1_100.zip",
+      "weight_suffix": ".zip",
+      "load_mode": "sb3_zip",
+      "scene_count": 20,
+      "episodes_per_scene": 5,
+      "total_episode_count": 100,
+      "overall_success_count": 54,
+      "overall_success_rate": 0.54,
+      "overall_avg_reward": -2222.9788468868956,
+      "overall_avg_steps": 1879.59,
+      "scenes": [
+        {
+          "scene_name": "train_env_001.json",
+          "scenario_path": "G:\\Code\\Python\\RL_fish\\scenarios\\large_pool_dataset_200\\train\\json\\train_env_001.json",
+          "episodes": [
+            {
+              "seed": 7,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": -1688.534772335328,
+              "episode_steps": 2499,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 8,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -11990.900124293123,
+              "episode_steps": 1526,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 9,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": -591.5221882701471,
+              "episode_steps": 2326,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 10,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": -966.8134343320047,
+              "episode_steps": 2517,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 11,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": 1178.6080798706378,
+              "episode_steps": 2234,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            }
+          ],
+          "episode_count": 5,
+          "success_count": 4,
+          "success_rate": 0.8,
+          "avg_reward": -2811.832487871993,
+          "avg_steps": 2220.4
+        },
+        {
+          "scene_name": "train_env_007.json",
+          "scenario_path": "G:\\Code\\Python\\RL_fish\\scenarios\\large_pool_dataset_200\\train\\json\\train_env_007.json",
+          "episodes": [
+            {
+              "seed": 1007,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": -9269.859803816875,
+              "episode_steps": 2847,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 1008,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -7538.424064521696,
+              "episode_steps": 1286,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 1009,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": -5431.728001618838,
+              "episode_steps": 2487,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 1010,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -2247.1735880447823,
+              "episode_steps": 528,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 1011,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -6476.727563888622,
+              "episode_steps": 1174,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            }
+          ],
+          "episode_count": 5,
+          "success_count": 2,
+          "success_rate": 0.4,
+          "avg_reward": -6192.782604378162,
+          "avg_steps": 1664.4
+        },
+        {
+          "scene_name": "train_env_014.json",
+          "scenario_path": "G:\\Code\\Python\\RL_fish\\scenarios\\large_pool_dataset_200\\train\\json\\train_env_014.json",
+          "episodes": [
+            {
+              "seed": 2007,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -2532.9573598308903,
+              "episode_steps": 741,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 2008,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -2203.5150134262153,
+              "episode_steps": 749,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 2009,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -4436.4308841940765,
+              "episode_steps": 937,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 2010,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -3335.207347876312,
+              "episode_steps": 1080,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 2011,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -2360.5124383847406,
+              "episode_steps": 763,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            }
+          ],
+          "episode_count": 5,
+          "success_count": 0,
+          "success_rate": 0.0,
+          "avg_reward": -2973.7246087424473,
+          "avg_steps": 854.0
+        },
+        {
+          "scene_name": "train_env_020.json",
+          "scenario_path": "G:\\Code\\Python\\RL_fish\\scenarios\\large_pool_dataset_200\\train\\json\\train_env_020.json",
+          "episodes": [
+            {
+              "seed": 3007,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": 698.8251352692666,
+              "episode_steps": 2435,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 3008,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": 1523.9198022754574,
+              "episode_steps": 2522,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 3009,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -2838.009833449715,
+              "episode_steps": 612,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 3010,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": 2929.531685090218,
+              "episode_steps": 2395,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 3011,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": 1466.9012852053418,
+              "episode_steps": 2347,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            }
+          ],
+          "episode_count": 5,
+          "success_count": 4,
+          "success_rate": 0.8,
+          "avg_reward": 756.2336148781138,
+          "avg_steps": 2062.2
+        },
+        {
+          "scene_name": "train_env_021.json",
+          "scenario_path": "G:\\Code\\Python\\RL_fish\\scenarios\\large_pool_dataset_200\\train\\json\\train_env_021.json",
+          "episodes": [
+            {
+              "seed": 4007,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -9807.840484360546,
+              "episode_steps": 2385,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 4008,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -2001.7075686371481,
+              "episode_steps": 1272,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 4009,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -2051.748250005416,
+              "episode_steps": 1409,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 4010,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -2448.591483683452,
+              "episode_steps": 1350,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 4011,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -6654.656932952324,
+              "episode_steps": 1799,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            }
+          ],
+          "episode_count": 5,
+          "success_count": 0,
+          "success_rate": 0.0,
+          "avg_reward": -4592.908943927777,
+          "avg_steps": 1643.0
+        },
+        {
+          "scene_name": "train_env_027.json",
+          "scenario_path": "G:\\Code\\Python\\RL_fish\\scenarios\\large_pool_dataset_200\\train\\json\\train_env_027.json",
+          "episodes": [
+            {
+              "seed": 5007,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -7244.309704945571,
+              "episode_steps": 1880,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 5008,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -4644.579407219104,
+              "episode_steps": 1253,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 5009,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": -576.1000131655617,
+              "episode_steps": 2050,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 5010,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -4920.84690409643,
+              "episode_steps": 1517,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 5011,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -9622.328629244883,
+              "episode_steps": 2388,
+              "collision": false,
+              "wall_collision": true,
+              "timeout": false
+            }
+          ],
+          "episode_count": 5,
+          "success_count": 1,
+          "success_rate": 0.2,
+          "avg_reward": -5401.63293173431,
+          "avg_steps": 1817.6
+        },
+        {
+          "scene_name": "train_env_034.json",
+          "scenario_path": "G:\\Code\\Python\\RL_fish\\scenarios\\large_pool_dataset_200\\train\\json\\train_env_034.json",
+          "episodes": [
+            {
+              "seed": 6007,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": -2331.540351824395,
+              "episode_steps": 2508,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 6008,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -2918.06278248302,
+              "episode_steps": 1441,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 6009,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -2852.648858604619,
+              "episode_steps": 1507,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 6010,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": -4689.264712601812,
+              "episode_steps": 2731,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 6011,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": -4337.049452277713,
+              "episode_steps": 2657,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            }
+          ],
+          "episode_count": 5,
+          "success_count": 3,
+          "success_rate": 0.6,
+          "avg_reward": -3425.713231558312,
+          "avg_steps": 2168.8
+        },
+        {
+          "scene_name": "train_env_040.json",
+          "scenario_path": "G:\\Code\\Python\\RL_fish\\scenarios\\large_pool_dataset_200\\train\\json\\train_env_040.json",
+          "episodes": [
+            {
+              "seed": 7007,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -2276.9318348387037,
+              "episode_steps": 1104,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 7008,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": -105.51726766780502,
+              "episode_steps": 2227,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 7009,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": 1130.0637809933123,
+              "episode_steps": 2618,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 7010,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": 785.0964579314904,
+              "episode_steps": 2342,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 7011,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": 1470.3843171702524,
+              "episode_steps": 2233,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            }
+          ],
+          "episode_count": 5,
+          "success_count": 4,
+          "success_rate": 0.8,
+          "avg_reward": 200.6190907177093,
+          "avg_steps": 2104.8
+        },
+        {
+          "scene_name": "train_env_041.json",
+          "scenario_path": "G:\\Code\\Python\\RL_fish\\scenarios\\large_pool_dataset_200\\train\\json\\train_env_041.json",
+          "episodes": [
+            {
+              "seed": 8007,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": 5640.342640200383,
+              "episode_steps": 2101,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 8008,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": 6168.713335179425,
+              "episode_steps": 2146,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 8009,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": 2619.245762872386,
+              "episode_steps": 2284,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 8010,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": 5555.090920278338,
+              "episode_steps": 2141,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 8011,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": 6114.888136685574,
+              "episode_steps": 2082,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            }
+          ],
+          "episode_count": 5,
+          "success_count": 5,
+          "success_rate": 1.0,
+          "avg_reward": 5219.656159043221,
+          "avg_steps": 2150.8
+        },
+        {
+          "scene_name": "train_env_047.json",
+          "scenario_path": "G:\\Code\\Python\\RL_fish\\scenarios\\large_pool_dataset_200\\train\\json\\train_env_047.json",
+          "episodes": [
+            {
+              "seed": 9007,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -2325.4128923645717,
+              "episode_steps": 962,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 9008,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -3114.0019485099037,
+              "episode_steps": 1185,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 9009,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": -1577.693794199799,
+              "episode_steps": 2207,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 9010,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": -1157.3517066103582,
+              "episode_steps": 2236,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 9011,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -6079.081413299098,
+              "episode_steps": 1897,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            }
+          ],
+          "episode_count": 5,
+          "success_count": 2,
+          "success_rate": 0.4,
+          "avg_reward": -2850.708350996746,
+          "avg_steps": 1697.4
+        },
+        {
+          "scene_name": "train_env_054.json",
+          "scenario_path": "G:\\Code\\Python\\RL_fish\\scenarios\\large_pool_dataset_200\\train\\json\\train_env_054.json",
+          "episodes": [
+            {
+              "seed": 10007,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -14501.957526414455,
+              "episode_steps": 2509,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 10008,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -3072.6237809902204,
+              "episode_steps": 898,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 10009,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": -427.47422211595796,
+              "episode_steps": 2738,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 10010,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -2774.821389770798,
+              "episode_steps": 775,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 10011,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -2893.5214459867057,
+              "episode_steps": 690,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            }
+          ],
+          "episode_count": 5,
+          "success_count": 1,
+          "success_rate": 0.2,
+          "avg_reward": -4734.079673055627,
+          "avg_steps": 1522.0
+        },
+        {
+          "scene_name": "train_env_060.json",
+          "scenario_path": "G:\\Code\\Python\\RL_fish\\scenarios\\large_pool_dataset_200\\train\\json\\train_env_060.json",
+          "episodes": [
+            {
+              "seed": 11007,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": -2786.5592901326127,
+              "episode_steps": 2381,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 11008,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": -2669.2428727557412,
+              "episode_steps": 2456,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 11009,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": -4126.895562088414,
+              "episode_steps": 2524,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 11010,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -5650.018010356255,
+              "episode_steps": 856,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 11011,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": -1026.8019798474143,
+              "episode_steps": 2371,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            }
+          ],
+          "episode_count": 5,
+          "success_count": 4,
+          "success_rate": 0.8,
+          "avg_reward": -3251.903543036088,
+          "avg_steps": 2117.6
+        },
+        {
+          "scene_name": "train_env_061.json",
+          "scenario_path": "G:\\Code\\Python\\RL_fish\\scenarios\\large_pool_dataset_200\\train\\json\\train_env_061.json",
+          "episodes": [
+            {
+              "seed": 12007,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -5649.0270938577405,
+              "episode_steps": 1731,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 12008,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": -1142.1696863741145,
+              "episode_steps": 2033,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 12009,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": -643.1812965967216,
+              "episode_steps": 2081,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 12010,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -5670.995913285138,
+              "episode_steps": 1612,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 12011,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": -1325.2954864131787,
+              "episode_steps": 2107,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            }
+          ],
+          "episode_count": 5,
+          "success_count": 3,
+          "success_rate": 0.6,
+          "avg_reward": -2886.133895305379,
+          "avg_steps": 1912.8
+        },
+        {
+          "scene_name": "train_env_067.json",
+          "scenario_path": "G:\\Code\\Python\\RL_fish\\scenarios\\large_pool_dataset_200\\train\\json\\train_env_067.json",
+          "episodes": [
+            {
+              "seed": 13007,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": 4368.767680728177,
+              "episode_steps": 2421,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 13008,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": 3435.017401011823,
+              "episode_steps": 2452,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 13009,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": 2794.8670441894706,
+              "episode_steps": 2644,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 13010,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": 3334.98905156106,
+              "episode_steps": 2301,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 13011,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": 3287.0125362371973,
+              "episode_steps": 2556,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            }
+          ],
+          "episode_count": 5,
+          "success_count": 5,
+          "success_rate": 1.0,
+          "avg_reward": 3444.1307427455454,
+          "avg_steps": 2474.8
+        },
+        {
+          "scene_name": "train_env_074.json",
+          "scenario_path": "G:\\Code\\Python\\RL_fish\\scenarios\\large_pool_dataset_200\\train\\json\\train_env_074.json",
+          "episodes": [
+            {
+              "seed": 14007,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -2640.0355148950757,
+              "episode_steps": 1194,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 14008,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -7751.834361408024,
+              "episode_steps": 1983,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 14009,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -2769.3720068422485,
+              "episode_steps": 1206,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 14010,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -2709.084737003611,
+              "episode_steps": 1626,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 14011,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -4305.777193671334,
+              "episode_steps": 1656,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            }
+          ],
+          "episode_count": 5,
+          "success_count": 0,
+          "success_rate": 0.0,
+          "avg_reward": -4035.2207627640587,
+          "avg_steps": 1533.0
+        },
+        {
+          "scene_name": "train_env_080.json",
+          "scenario_path": "G:\\Code\\Python\\RL_fish\\scenarios\\large_pool_dataset_200\\train\\json\\train_env_080.json",
+          "episodes": [
+            {
+              "seed": 15007,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": 2253.398553447139,
+              "episode_steps": 2310,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 15008,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": -2163.019858905391,
+              "episode_steps": 2905,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 15009,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": -969.4348234187092,
+              "episode_steps": 2769,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 15010,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": 1445.8337874376384,
+              "episode_steps": 2319,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 15011,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": 1615.2233699455614,
+              "episode_steps": 2408,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            }
+          ],
+          "episode_count": 5,
+          "success_count": 5,
+          "success_rate": 1.0,
+          "avg_reward": 436.4002057012477,
+          "avg_steps": 2542.2
+        },
+        {
+          "scene_name": "train_env_081.json",
+          "scenario_path": "G:\\Code\\Python\\RL_fish\\scenarios\\large_pool_dataset_200\\train\\json\\train_env_081.json",
+          "episodes": [
+            {
+              "seed": 16007,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -3817.050355896675,
+              "episode_steps": 1025,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 16008,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": -3064.7600768242673,
+              "episode_steps": 2824,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 16009,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -3201.172910164348,
+              "episode_steps": 997,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 16010,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": -3700.8958005208674,
+              "episode_steps": 2881,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 16011,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -6016.736200429575,
+              "episode_steps": 1180,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            }
+          ],
+          "episode_count": 5,
+          "success_count": 2,
+          "success_rate": 0.4,
+          "avg_reward": -3960.1230687671464,
+          "avg_steps": 1781.4
+        },
+        {
+          "scene_name": "train_env_087.json",
+          "scenario_path": "G:\\Code\\Python\\RL_fish\\scenarios\\large_pool_dataset_200\\train\\json\\train_env_087.json",
+          "episodes": [
+            {
+              "seed": 17007,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -2495.386142996585,
+              "episode_steps": 566,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 17008,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": -4583.473223982353,
+              "episode_steps": 2420,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 17009,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": -3533.3089984837466,
+              "episode_steps": 2471,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 17010,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -14429.458123041044,
+              "episode_steps": 1829,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 17011,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": -2877.644809933566,
+              "episode_steps": 2401,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            }
+          ],
+          "episode_count": 5,
+          "success_count": 3,
+          "success_rate": 0.6,
+          "avg_reward": -5583.8542596874595,
+          "avg_steps": 1937.4
+        },
+        {
+          "scene_name": "train_env_094.json",
+          "scenario_path": "G:\\Code\\Python\\RL_fish\\scenarios\\large_pool_dataset_200\\train\\json\\train_env_094.json",
+          "episodes": [
+            {
+              "seed": 18007,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": 1520.0517088372476,
+              "episode_steps": 2528,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 18008,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -2645.362138494798,
+              "episode_steps": 795,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 18009,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -2719.6463706879344,
+              "episode_steps": 808,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 18010,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": 2297.250243448551,
+              "episode_steps": 2095,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 18011,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": 1939.0984569394504,
+              "episode_steps": 2535,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            }
+          ],
+          "episode_count": 5,
+          "success_count": 3,
+          "success_rate": 0.6,
+          "avg_reward": 78.27838000850333,
+          "avg_steps": 1752.2
+        },
+        {
+          "scene_name": "train_env_100.json",
+          "scenario_path": "G:\\Code\\Python\\RL_fish\\scenarios\\large_pool_dataset_200\\train\\json\\train_env_100.json",
+          "episodes": [
+            {
+              "seed": 19007,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": -1683.9974940496695,
+              "episode_steps": 2037,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 19008,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": 690.7215052564244,
+              "episode_steps": 1988,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 19009,
+              "success": true,
+              "termination_reason": "goal_reached",
+              "episode_reward": 942.6838203748291,
+              "episode_steps": 2083,
+              "collision": false,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 19010,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -4295.303247018752,
+              "episode_steps": 1013,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            },
+            {
+              "seed": 19011,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -5125.488429596563,
+              "episode_steps": 1054,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            }
+          ],
+          "episode_count": 5,
+          "success_count": 3,
+          "success_rate": 0.6,
+          "avg_reward": -1894.2767690067462,
+          "avg_steps": 1635.0
+        }
+      ]
+    }
+  ]
+}

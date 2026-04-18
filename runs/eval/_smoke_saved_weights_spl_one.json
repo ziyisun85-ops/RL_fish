@@ -1,0 +1,56 @@
+{
+  "device": "cpu",
+  "scenario_dir": "G:\\Code\\Python\\RL_fish\\scenarios\\large_pool_dataset_200\\test\\json",
+  "scene_start": 1,
+  "scene_end": 1,
+  "episodes_per_scene": 1,
+  "weights": [
+    {
+      "weight_name": "ppo_fish_baseline_update_000025_policy.pth",
+      "weight_path": "G:\\Code\\Python\\RL_fish\\runs\\ppo_fish_baseline\\scenario_cycle\\checkpoints\\ppo_fish_baseline_update_000025_policy.pth",
+      "weight_suffix": ".pth",
+      "config_path": "G:\\Code\\Python\\RL_fish\\runs\\ppo_fish_baseline\\scenario_cycle\\config.json",
+      "run_id": "lora_cycle_train20_update20_save20_20260415_resume2",
+      "lora_enabled": true,
+      "loaded_tensor_count": 49,
+      "skipped_tensor_count": 0,
+      "scene_count": 1,
+      "episodes_per_scene": 1,
+      "total_episode_count": 1,
+      "overall_success_count": 0,
+      "overall_success_rate": 0.0,
+      "overall_spl": 0.0,
+      "overall_avg_reward": -2590.4725799079933,
+      "overall_avg_steps": 454.0,
+      "scenes": [
+        {
+          "scene_name": "test_env_001.json",
+          "scenario_path": "G:\\Code\\Python\\RL_fish\\scenarios\\large_pool_dataset_200\\test\\json\\test_env_001.json",
+          "episodes": [
+            {
+              "seed": 7,
+              "success": false,
+              "termination_reason": "persistent_contact_failure",
+              "episode_reward": -2590.4725799079933,
+              "episode_steps": 454,
+              "distance_to_goal_region": 6.147424114628253,
+              "goal_progress_ratio_final": 0.18028774030932004,
+              "path_length_head_xy": 5.899878194038817,
+              "shortest_touch_distance_head_xy": 6.763781354047899,
+              "spl": 0.0,
+              "collision": true,
+              "wall_collision": false,
+              "timeout": false
+            }
+          ],
+          "episode_count": 1,
+          "success_count": 0,
+          "success_rate": 0.0,
+          "avg_spl": 0.0,
+          "avg_reward": -2590.4725799079933,
+          "avg_steps": 454.0
+        }
+      ]
+    }
+  ]
+}

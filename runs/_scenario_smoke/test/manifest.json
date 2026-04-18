@@ -1,0 +1,14 @@
+{
+  "split": "test",
+  "count": 1,
+  "scenarios": [
+    {
+      "scenario_id": "test_env_001",
+      "split": "test",
+      "source_seed": 100000,
+      "obstacle_count": 10,
+      "json_path": "G:\\Code\\Python\\RL_fish\\runs\\_scenario_smoke\\test\\json\\test_env_001.json",
+      "topdown_path": "G:\\Code\\Python\\RL_fish\\runs\\_scenario_smoke\\test\\topdown\\test_env_001.png"
+    }
+  ]
+}

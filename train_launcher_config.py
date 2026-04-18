@@ -22,6 +22,12 @@ BC_WEIGHTS = (
     / "checkpoints"
     / "bc_large_pool_v2_epoch020_actor.pth"
 ).as_posix()
+PPO_BC_WEIGHTS = (
+    Path("runs")
+    / "bc_pretrain"
+    / "bc20_40_60_80_100_ppo"
+    / "bc_large_pool_1_20__60_80_epoch020_actor.pth"
+).as_posix()
 ALIGN_ROLLOUT_UPDATES_TO_EPISODE_COUNT = True
 
 # If 100-scene updates are too memory-heavy:
@@ -47,6 +53,7 @@ def build_wrapper_default_args(
     algo: str,
     log_dir: str,
     model_name: str,
+    bc_weights: str | None = None,
 ) -> list[str]:
     algo_name = str(algo).strip().lower()
     if algo_name not in {"ppo", "sac"}:
@@ -91,7 +98,7 @@ def build_wrapper_default_args(
     args.extend(
         [
             "--bc-weights",
-            BC_WEIGHTS,
+            bc_weights if bc_weights is not None else BC_WEIGHTS,
             "--log-dir",
             log_dir,
             "--model-name",
@@ -206,6 +213,9 @@ def _quiet_episode_metrics_on_step(self) -> bool:
             "termination_reason": str(info.get("termination_reason", "unknown")),
             "episode_return": float(info.get("episode_return", episode_info.get("r", 0.0))),
             "goal_progress_ratio": float(info.get("goal_progress_ratio", 0.0)),
+            "avg_goal_progress_ratio": float(
+                info.get("avg_goal_progress_ratio", info.get("goal_progress_ratio", 0.0))
+            ),
             "distance_to_goal_region": float(info.get("distance_to_goal_region", 0.0)),
             "visual_obstacle_detected": bool(info.get("visual_obstacle_detected", False)),
             "visual_obstacle_pixel_fraction": float(info.get("visual_obstacle_pixel_fraction", 0.0)),
@@ -214,6 +224,12 @@ def _quiet_episode_metrics_on_step(self) -> bool:
             "success": bool(info.get("success", False)),
             "collision": bool(info.get("collision", False)),
             "wall_collision": bool(info.get("wall_collision", False)),
+            "obstacle_collision_count": int(
+                info.get("obstacle_collision_count", int(bool(info.get("collision", False))))
+            ),
+            "wall_collision_count": int(
+                info.get("wall_collision_count", int(bool(info.get("wall_collision", False))))
+            ),
             "out_of_bounds": bool(info.get("out_of_bounds", False)),
             "timeout": bool(info.get("timeout", False)),
         }

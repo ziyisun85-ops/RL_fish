@@ -47,6 +47,7 @@ EPISODE_METRICS_FIELDNAMES = [
     "termination_reason",
     "episode_return",
     "goal_progress_ratio",
+    "avg_goal_progress_ratio",
     "distance_to_goal_region",
     "visual_obstacle_detected",
     "visual_obstacle_pixel_fraction",
@@ -55,6 +56,8 @@ EPISODE_METRICS_FIELDNAMES = [
     "success",
     "collision",
     "wall_collision",
+    "obstacle_collision_count",
+    "wall_collision_count",
     "out_of_bounds",
     "timeout",
 ]
@@ -802,6 +805,10 @@ def _convert_legacy_episode_row(
         "termination_reason": str(row.get("termination_reason", "unknown")),
         "episode_return": _parse_csv_float(row.get("episode_return", row.get("episode_reward", 0.0)), 0.0),
         "goal_progress_ratio": _parse_csv_float(row.get("goal_progress_ratio"), 0.0),
+        "avg_goal_progress_ratio": _parse_csv_float(
+            row.get("avg_goal_progress_ratio", row.get("goal_progress_ratio")),
+            _parse_csv_float(row.get("goal_progress_ratio"), 0.0),
+        ),
         "distance_to_goal_region": _parse_csv_float(row.get("distance_to_goal_region"), 0.0),
         "visual_obstacle_detected": _parse_csv_bool(row.get("visual_obstacle_detected")),
         "visual_obstacle_pixel_fraction": _parse_csv_float(row.get("visual_obstacle_pixel_fraction"), 0.0),
@@ -810,6 +817,14 @@ def _convert_legacy_episode_row(
         "success": _parse_csv_bool(row.get("success")),
         "collision": _parse_csv_bool(row.get("collision")),
         "wall_collision": _parse_csv_bool(row.get("wall_collision")),
+        "obstacle_collision_count": _parse_csv_int(
+            row.get("obstacle_collision_count"),
+            int(_parse_csv_bool(row.get("collision"))),
+        ),
+        "wall_collision_count": _parse_csv_int(
+            row.get("wall_collision_count"),
+            int(_parse_csv_bool(row.get("wall_collision"))),
+        ),
         "out_of_bounds": _parse_csv_bool(row.get("out_of_bounds")),
         "timeout": _parse_csv_bool(row.get("timeout")),
     }
@@ -1227,6 +1242,9 @@ class EpisodeMetricsCallback(BaseCallback):
                 "termination_reason": str(info.get("termination_reason", "unknown")),
                 "episode_return": float(info.get("episode_return", episode_info.get("r", 0.0))),
                 "goal_progress_ratio": float(info.get("goal_progress_ratio", 0.0)),
+                "avg_goal_progress_ratio": float(
+                    info.get("avg_goal_progress_ratio", info.get("goal_progress_ratio", 0.0))
+                ),
                 "distance_to_goal_region": float(info.get("distance_to_goal_region", 0.0)),
                 "visual_obstacle_detected": bool(info.get("visual_obstacle_detected", False)),
                 "visual_obstacle_pixel_fraction": float(info.get("visual_obstacle_pixel_fraction", 0.0)),
@@ -1235,6 +1253,12 @@ class EpisodeMetricsCallback(BaseCallback):
                 "success": bool(info.get("success", False)),
                 "collision": bool(info.get("collision", False)),
                 "wall_collision": bool(info.get("wall_collision", False)),
+                "obstacle_collision_count": int(
+                    info.get("obstacle_collision_count", int(bool(info.get("collision", False))))
+                ),
+                "wall_collision_count": int(
+                    info.get("wall_collision_count", int(bool(info.get("wall_collision", False))))
+                ),
                 "out_of_bounds": bool(info.get("out_of_bounds", False)),
                 "timeout": bool(info.get("timeout", False)),
             }
